@@ -86,6 +86,10 @@ if __name__ == '__main__':
 	gs = GameSpace()
 	lc = LoopingCall(gs.game_loop_iterate)	
 	lc.start(1/60)
+	#try:
 	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
+	#except:
+	#	PLAYER_PORT = 40111
+	#	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
 	reactor.run()
 	lc.stop()

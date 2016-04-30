@@ -12,7 +12,7 @@ from twisted.internet import reactor
 
 #init port number
 PLAYER1_PORT = 40011
-PLAYER2_PORT = 40030
+PLAYER2_PORT = 40111
 
 
 ## player 1 ##
