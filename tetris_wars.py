@@ -12,16 +12,14 @@ from twisted.protocols.basic import LineReceiver
 from twisted.internet.tcp import Port
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredQueue
+from twisted.internet.task import LoopingCall
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
 PLAYER_PORT = 40011
 
 class GameSpace:
-	def __init__(self): #connect to server
-		reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
-		reactor.run()
-	def main(self):
+	def __init__(self):
 		# 1. init game space
 		pygame.init()
 		self.size = self.width, self.height = (640, 480)
@@ -33,28 +31,29 @@ class GameSpace:
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
 
-		# 3. start game loop
-		while True:
-			# 4. clock tick regulation (framerate)
-			self.clock.tick(60)
-			# 5. user input reading
-			for event in pygame.event.get():
-				if event.type == QUIT:
-					sys.exit
-			# 6. tick updating - send a tick to every game object
-			self.playerspace.tick()
-			self.enemyspace.tick()
-			# 7. screen/display updating
-			self.screen.fill(self.black)
-			self.screen.blit(self.playerspace.image, self.playerspace.rect)
-			self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
-			pygame.display.flip()
+	# 3. start game loop
+	def game_loop_iterate(self):
+		# 4. clock tick regulation (framerate)
+		self.clock.tick(60)
+		# 5. user input reading
+		for event in pygame.event.get():
+			if event.type == QUIT:
+				sys.exit()
+		# 6. tick updating - send a tick to every game object
+		self.playerspace.tick()
+		self.enemyspace.tick()
+		# 7. screen/display updating
+		self.screen.fill(self.black)
+		self.screen.blit(self.playerspace.image, self.playerspace.rect)
+		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
+		pygame.display.flip()
 
 class PlayerSpace(pygame.sprite.Sprite):
 	def __init__(self, player_num, gs=None):
 		pygame.sprite.Sprite.__init__(self)
 		self.ypos = gs.height/2
-		if player_num == 1:
+		self.num = player_num
+		if self.num == 1:
 			self.xpos = 140
 		else:
 			self.xpos = 500
@@ -64,7 +63,11 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
 	def tick(self):
-		pass
+		if self.num == 1:
+			self.color = (255,255,255)
+			self.image.fill(self.color)
+			self.rect = self.image.get_rect()
+			self.rect.center = (self.xpos, self.ypos)
 
 class ClientConnection(Protocol):
 	def connectionMade(self):
@@ -81,4 +84,8 @@ class ClientConnFactory(ClientFactory):
 
 if __name__ == '__main__':
 	gs = GameSpace()
-	gs.main()
+	lc = LoopingCall(gs.game_loop_iterate)	
+	lc.start(1/60)
+	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
+	reactor.run()
+	lc.stop()
