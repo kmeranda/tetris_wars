@@ -1,9 +1,26 @@
+#pygame imports
 import sys
 import os
 import pygame
 from pygame.locals import *
 
+#twisted imports
+from twisted.internet.protocol import ClientFactory
+from twisted.internet.protocol import Factory
+from twisted.internet.protocol import Protocol
+from twisted.protocols.basic import LineReceiver
+from twisted.internet.tcp import Port
+from twisted.internet import reactor
+from twisted.internet.defer import DeferredQueue
+
+#twisted port/host variables
+HOST = 'student02.cse.nd.edu'
+PLAYER_PORT = 40011
+
 class GameSpace:
+	def __init__(self): #connect to server
+		reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
+		reactor.run()
 	def main(self):
 		# 1. init game space
 		pygame.init()
@@ -48,6 +65,19 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 	def tick(self):
 		pass
+
+class ClientConnection(Protocol):
+	def connectionMade(self):
+		print "New connection made:", HOST, "port", PLAYER_PORT
+	def dataReceived(self, data):
+		print "Received data:", data
+	def connectionLost(self, reason):
+		print "Lost connection with", HOST, "port", PLAYER_PORT
+		reactor.stop() #I think we should keep this??
+
+class ClientConnFactory(ClientFactory):
+	def buildProtocol(self,addr):
+		return ClientConnection()
 
 if __name__ == '__main__':
 	gs = GameSpace()
