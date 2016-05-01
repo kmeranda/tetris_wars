@@ -67,7 +67,12 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
+		self.board = Board(self) #initialize board
 	def tick(self):
+		self.board.addPiece()
+		#for x in range(self.board.width):
+		#	for y in range(self.board.height):
+				
 		if self.num == 1:
 			self.color = (255,255,255)
 			self.image.fill(self.color)
@@ -80,8 +85,10 @@ class Board(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self)
 		self.width = 10
 		self.height = 20
-		self.board = [[0 for x in range(width)] for y in range(height)]
-
+		self.array = [[0 for x in range(self.width)] for y in range(self.height)]
+	def addPiece(self): #this is where a full piece should be added to the array
+		self.array[0][0] = 1
+		print self.array
 
 ## SERVER CONNECTIONS ##
 class ClientConnection(Protocol):
