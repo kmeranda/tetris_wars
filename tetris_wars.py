@@ -24,7 +24,7 @@ class GameSpace:
 	def __init__(self):
 		# 1. init game space
 		pygame.init()
-		self.size = self.width, self.height = (640, 480)
+		self.size = self.width, self.height = (640, 580)
 		self.screen = pygame.display.set_mode(self.size)
 		self.black = (0,0,0)
 
@@ -49,6 +49,7 @@ class GameSpace:
 		self.screen.fill(self.black)
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
+		self.screen.blit(self.playerspace.squareImage, self.playerspace.squareRect)
 		pygame.display.flip()
 
 
@@ -63,16 +64,21 @@ class PlayerSpace(pygame.sprite.Sprite):
 		else:
 			self.xpos = 500
 		self.color = (185,185,185)
-		self.image = pygame.Surface((250,400))
+		self.image = pygame.Surface((250,500))
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self) #initialize board
 	def tick(self):
 		self.board.addPiece()
-		#for x in range(self.board.width):
-		#	for y in range(self.board.height):
-				
+		for x in range(self.board.width):
+			for y in range(self.board.height):
+				if self.board.array[y][x] == 1:
+					self.squareColor = (255, 0, 0)
+					self.squareImage = pygame.Surface((25,25))
+					self.squareImage.fill(self.squareColor)
+					self.squareRect = self.squareImage.get_rect()
+					self.squareRect.center = ((15+(12.5*x)),(40+(12.5*y)))
 		if self.num == 1:
 			self.color = (255,255,255)
 			self.image.fill(self.color)
@@ -88,7 +94,6 @@ class Board(pygame.sprite.Sprite):
 		self.array = [[0 for x in range(self.width)] for y in range(self.height)]
 	def addPiece(self): #this is where a full piece should be added to the array
 		self.array[0][0] = 1
-		print self.array
 
 ## SERVER CONNECTIONS ##
 class ClientConnection(Protocol):
