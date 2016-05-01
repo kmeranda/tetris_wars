@@ -18,6 +18,8 @@ from twisted.internet.task import LoopingCall
 HOST = 'student02.cse.nd.edu'
 PLAYER_PORT = 40011
 
+
+## Game ##
 class GameSpace:
 	def __init__(self):
 		# 1. init game space
@@ -38,7 +40,8 @@ class GameSpace:
 		# 5. user input reading
 		for event in pygame.event.get():
 			if event.type == QUIT:
-				sys.exit()
+				lc.stop()
+				reactor.stop()
 		# 6. tick updating - send a tick to every game object
 		self.playerspace.tick()
 		self.enemyspace.tick()
@@ -48,6 +51,8 @@ class GameSpace:
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
 		pygame.display.flip()
 
+
+## PLAYER ##
 class PlayerSpace(pygame.sprite.Sprite):
 	def __init__(self, player_num, gs=None):
 		pygame.sprite.Sprite.__init__(self)
@@ -69,6 +74,16 @@ class PlayerSpace(pygame.sprite.Sprite):
 			self.rect = self.image.get_rect()
 			self.rect.center = (self.xpos, self.ypos)
 
+## BOARD ##
+class Board(pygame.sprite.Sprite):
+	def __init__(self, gs=None):
+		pygame.sprite.Sprite.__init__(self)
+		self.width = 10
+		self.height = 20
+		self.board = [[0 for x in range(width)] for y in range(height)]
+
+
+## SERVER CONNECTIONS ##
 class ClientConnection(Protocol):
 	def connectionMade(self):
 		print "New connection made:", HOST, "port", PLAYER_PORT
@@ -76,11 +91,12 @@ class ClientConnection(Protocol):
 		print "Received data:", data
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT
-		reactor.stop() #I think we should keep this??
 
 class ClientConnFactory(ClientFactory):
 	def buildProtocol(self,addr):
 		return ClientConnection()
+
+
 
 if __name__ == '__main__':
 	gs = GameSpace()
@@ -92,4 +108,3 @@ if __name__ == '__main__':
 	#	PLAYER_PORT = 40111
 	#	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
 	reactor.run()
-	lc.stop()
