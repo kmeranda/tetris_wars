@@ -47,6 +47,15 @@ class GameSpace:
 			if event.type == QUIT:
 				lc.stop()
 				reactor.stop()
+			elif event.type == KEYDOWN:
+				if event.key == K_LEFT:
+					self.playerspace.move(-1)
+				elif event.key == K_RIGHT:
+					self.playerspace.move(1)
+				elif event.key == K_UP:
+					self.playerspace.place()
+				elif event.key == K_SPACE:
+					self.playerspace.rotate()
 		# 6. tick updating - send a tick to every game object
 		self.playerspace.tick()
 		self.enemyspace.tick()
@@ -84,6 +93,33 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
+	def move(self, dir):
+		edge = False	# check so that you don't go out of bounds
+		for i in range(4):
+			self.curr_piece.xpos[i] += dir
+			if self.curr_piece.xpos[i]<0 or self.curr_piece.xpos[i]>=self.board.width:
+				edge = True
+		if edge:
+			for i in range(4):
+				self.curr_piece.xpos[i] -= dir
+			
+
+	def place(self):
+		# curr_piece tick logic looped until it hits the bottom
+		while not self.piece_landed:
+			self.curr_piece.tick()
+			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+		for i in range(4):
+			x = self.curr_piece.xpos[i]
+			y = self.curr_piece.ypos[i]
+			s = self.curr_piece.shape
+			self.board.boardArray[y][x] = s
+		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+		self.piece_landed = False
+		
+	
+	def rotate(self):
+		pass
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions
@@ -94,8 +130,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		return (num != 4)	# return True if there is a collision
 		
 	def tick(self):
-		#should be called when a piece lands
-		self.board.createSquares()
+		self.board.createSquares() #visually interpret board
 		#update current piece only on own board
 		if self.num == 1:
 			self.board.addPiece()
