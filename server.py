@@ -23,9 +23,9 @@ class Player1Connection(LineReceiver): #connects server
 		print "Connection received from Player 1:", self.addr
 		reactor.listenTCP(PLAYER2_PORT, Player2ConnFactory())
 	def dataReceived(self, data):
-		print "Received Data: ", data
+		print "Received Data"#, data -- prints too much garbage
 	def connectionLost(self, reason):
-		print "Connection lost from", self.addr
+		print "Connection lost from Player 1:", self.addr
 
 
 class Player1ConnFactory(Factory):
@@ -40,9 +40,9 @@ class Player2Connection(LineReceiver):
 	def connectionMade(self):
 		print "Connection received from Player 2:", self.addr
 	def dataReceived(self, data):
-		print "Received Data: ", data
+		print "Received Data"#, data -- prints too much garbage
 	def connectionLost(self, reason):
-		print "Connection lost from", self.addr
+		print "Connection lost from Player 2:", self.addr
 
 
 class Player2ConnFactory(Factory):

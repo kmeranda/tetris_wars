@@ -14,11 +14,10 @@ from twisted.internet.tcp import Port
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredQueue
 from twisted.internet.task import LoopingCall
-import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40011
+PLAYER_PORT = 40111
 
 
 
@@ -161,13 +160,13 @@ class Board(pygame.sprite.Sprite):
 	def moveDown(self): #should reinit image and rect arrays
 		pass
 	def addPiece(self): #this is where a full piece should be added to the array
-		self.boardArray[0][0] = 'O'
-		self.boardArray[1][1] = 'I'
-		self.boardArray[2][2] = 'S'
+		self.boardArray[0][6] = 'O'
+		self.boardArray[1][5] = 'I'
+		self.boardArray[2][4] = 'S'
 		self.boardArray[3][3] = 'Z'
-		self.boardArray[4][4] = 'L'
-		self.boardArray[5][5] = 'J'
-		self.boardArray[6][6] = 'T'
+		self.boardArray[4][2] = 'L'
+		self.boardArray[5][1] = 'J'
+		self.boardArray[6][0] = 'T'
 
 
 ## CURRENT PIECE ##
@@ -254,23 +253,16 @@ class CurrentPiece(pygame.sprite.Sprite):
 
 ## SERVER CONNECTIONS ##
 class ClientConnection(Protocol):
-	def __init__(self, gs):
-		self.gs = gs
 	def connectionMade(self):
 		print "New connection made:", HOST, "port", PLAYER_PORT
-		array = pickle.dumps(self.gs.playerspace.board.boardArray)#pickle array to string
-		self.transport.write(array) #send updated gamespace to server
-		#receive other gamespace from server
 	def dataReceived(self, data):
 		print "Received data:", data
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT
 
 class ClientConnFactory(ClientFactory):
-	def __init__(self, gs):
-		self.gs = gs
 	def buildProtocol(self,addr):
-		return ClientConnection(self.gs)
+		return ClientConnection()
 
 
 
@@ -278,5 +270,9 @@ if __name__ == '__main__':
 	gs = GameSpace()
 	lc = LoopingCall(gs.game_loop_iterate)	
 	lc.start(1/60)
-	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory(gs))
+	#try:
+	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
+	#except:
+	#	PLAYER_PORT = 40111
+	#	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
 	reactor.run()
