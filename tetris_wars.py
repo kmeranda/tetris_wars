@@ -113,28 +113,30 @@ class Board(pygame.sprite.Sprite):
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
+					self.centerx = 18+(24*(self.width-x))
+					self.centery = 38+(24*(self.height-y))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
 					self.squareRect = self.squareImage.get_rect()
-					self.squareRect.center = ((15+(12*x)),(40+(12*y)))
+					self.squareRect.center = (self.centerx, self.centery)
 					self.rects.append(self.squareRect)
 					self.border = pygame.Surface((26,26))
 					self.border.fill((0,0,0))
 					self.borders.append(self.border)
 					self.borderRect = self.border.get_rect()
-					self.borderRect.center = ((15+(12*x)),(40+(12*y)))
+					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
 	def moveDown(self): #should reinit image and rect arrays
 		pass
 	def addPiece(self): #this is where a full piece should be added to the array
 		self.boardArray[0][0] = 'O'
-		self.boardArray[2][1] = 'I'
-		self.boardArray[4][2] = 'S'
-		self.boardArray[6][3] = 'Z'
-		self.boardArray[8][4] = 'L'
-		self.boardArray[10][5] = 'J'
-		self.boardArray[12][6] = 'T'
+		self.boardArray[1][1] = 'I'
+		self.boardArray[2][2] = 'S'
+		self.boardArray[3][3] = 'Z'
+		self.boardArray[4][4] = 'L'
+		self.boardArray[5][5] = 'J'
+		self.boardArray[6][6] = 'T'
 
 
 
