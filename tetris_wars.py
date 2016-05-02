@@ -94,8 +94,22 @@ class Board(pygame.sprite.Sprite):
 	def createSquares(self):
 		for x in range(self.width):
 			for y in range(self.height):
-				if self.boardArray[y][x] == 1:
+				#set square color depending on contents of array
+				if (self.boardArray[y][x] == 'O'): #yellow
+					self.squareColor = (255, 255, 0)
+				elif (self.boardArray[y][x] == 'I'): #teal
+					self.squareColor = (0, 255, 255)
+				elif (self.boardArray[y][x] == 'S'): #red
 					self.squareColor = (255, 0, 0)
+				elif (self.boardArray[y][x] == 'Z'): #green
+					self.squareColor = (34, 139, 34)
+				elif (self.boardArray[y][x] == 'L'): #orange
+					self.squareColor = (255, 140, 0)
+				elif (self.boardArray[y][x] == 'J'): #blue
+					self.squareColor = (0, 0, 255)
+				elif (self.boardArray[y][x] == 'T'): #purple
+					self.squareColor = (160, 32, 240)
+				if (self.boardArray[y][x] != 0): #create square and rect for all filled coordinates
 					self.squareImage = pygame.Surface((25,25))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
@@ -105,9 +119,13 @@ class Board(pygame.sprite.Sprite):
 	def moveDown(self): #should reinit image and rect arrays
 		pass
 	def addPiece(self): #this is where a full piece should be added to the array
-		self.boardArray[0][0] = 1
-		self.boardArray[1][1] = 1
-		self.boardArray[19][9] = 1
+		self.boardArray[0][0] = 'O'
+		self.boardArray[2][1] = 'I'
+		self.boardArray[4][2] = 'S'
+		self.boardArray[6][3] = 'Z'
+		self.boardArray[8][4] = 'L'
+		self.boardArray[10][5] = 'J'
+		self.boardArray[12][6] = 'T'
 
 
 
