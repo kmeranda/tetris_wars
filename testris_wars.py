@@ -14,10 +14,11 @@ from twisted.internet.tcp import Port
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredQueue
 from twisted.internet.task import LoopingCall
+import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40011
+PLAYER_PORT = 40211
 
 
 
@@ -44,6 +45,15 @@ class GameSpace:
 			if event.type == QUIT:
 				lc.stop()
 				reactor.stop()
+			elif event.type == KEYDOWN:
+				if event.key == K_LEFT:
+					self.playerspace.move(-1)
+				elif event.key == K_RIGHT:
+					self.playerspace.move(1)
+				elif event.key == K_UP:
+					self.playerspace.place()
+				elif event.key == K_SPACE:
+					self.playerspace.rotate()
 		# 6. tick updating - send a tick to every game object
 		self.playerspace.tick()
 		self.enemyspace.tick()
@@ -77,8 +87,36 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self) #initialize board
-		#del self.curr_piece
 		self.curr_piece = CurrentPiece(self)
+	
+	def move(self, dir):
+		edge = False	# check so that you don't go out of bounds
+		for i in range(4):
+			self.curr_piece.xpos[i] += dir
+			if self.curr_piece.xpos[i]<0 or self.curr_piece.xpos[i]>=self.board.width:
+				edge = True
+		if edge:
+			for i in range(4):
+				self.curr_piece.xpos[i] -= dir
+			
+
+	def place(self):
+		# curr_piece tick logic looped until it hits the bottom
+		while not self.piece_landed:
+			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+			self.curr_piece.tick()
+		for i in range(4):
+			x = self.curr_piece.xpos[i]
+			y = self.curr_piece.ypos[i]
+			s = self.curr_piece.shape
+			self.board.boardArray[y][x] = s
+		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+		self.piece_landed = False
+		
+	
+	def rotate(self):
+		pass
+	
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions
@@ -105,11 +143,6 @@ class PlayerSpace(pygame.sprite.Sprite):
 			
 		else:	# move curr_piece down
 			self.curr_piece.tick()
-		if self.num == 1:
-			self.color = (255,255,255)
-			self.image.fill(self.color)
-			self.rect = self.image.get_rect()
-			self.rect.center = (self.xpos, self.ypos)
 
 
 ## BOARD ##
@@ -168,6 +201,8 @@ class Board(pygame.sprite.Sprite):
 		self.boardArray[5][5] = 'J'
 		self.boardArray[6][6] = 'T'
 
+
+## CURRENT PIECE ##
 class CurrentPiece(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
 		shapes = ['O', 'I', 'S', 'Z', 'L', 'J', 'T']
@@ -251,16 +286,23 @@ class CurrentPiece(pygame.sprite.Sprite):
 
 ## SERVER CONNECTIONS ##
 class ClientConnection(Protocol):
+	def __init__(self, gs):
+		self.gs = gs
 	def connectionMade(self):
 		print "New connection made:", HOST, "port", PLAYER_PORT
+		array = pickle.dumps(self.gs.playerspace.board.boardArray)#pickle array to string
+		self.transport.write(array) #send updated gamespace to server
+		#receive other gamespace from server
 	def dataReceived(self, data):
 		print "Received data:", data
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT
 
 class ClientConnFactory(ClientFactory):
+	def __init__(self, gs):
+		self.gs = gs
 	def buildProtocol(self,addr):
-		return ClientConnection()
+		return ClientConnection(self.gs)
 
 
 
@@ -268,9 +310,5 @@ if __name__ == '__main__':
 	gs = GameSpace()
 	lc = LoopingCall(gs.game_loop_iterate)	
 	lc.start(1/60)
-	#try:
-	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
-	#except:
-	#	PLAYER_PORT = 40111
-	#	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory())
+	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory(gs))
 	reactor.run()
