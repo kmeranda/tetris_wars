@@ -29,7 +29,7 @@ class Player1Connection(LineReceiver): #connects server
 		print "Connection received from Player 1:", self.addr
 		reactor.listenTCP(PLAYER2_PORT, Player2ConnFactory())
 	def dataReceived(self, data):
-		print "Received Data"#, data -- prints too much garbage
+		#print "Received Data:", data -- prints too much garbage
 		P2_QUEUE.put(data)
 		P1_QUEUE.get().addCallback(self.sendData)
 	def sendData(self, data): #send data to player 1
@@ -50,7 +50,7 @@ class Player2Connection(LineReceiver):
 	def connectionMade(self):
 		print "Connection received from Player 2:", self.addr
 	def dataReceived(self, data):
-		print "Received Data"#, data -- prints too much garbage
+		#print "Received Data", data -- prints too much garbage
 		P1_QUEUE.put(data)
 		P2_QUEUE.get().addCallback(self.sendData)
 	def sendData(self, data): #send data to player 2

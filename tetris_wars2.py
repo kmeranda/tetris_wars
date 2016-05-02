@@ -269,7 +269,7 @@ class ClientConnection(Protocol):
 		print "New connection made:", HOST, "port", PLAYER_PORT
 		self.sendData()
 	def dataReceived(self, data): #receive other gamespace from server
-		print "Received data"
+		#print "Received data"
 		self.gs.enemyspace.board.boardArray = pickle.loads(data)
 		self.sendData()
 	def sendData(self):
