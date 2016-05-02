@@ -119,7 +119,17 @@ class PlayerSpace(pygame.sprite.Sprite):
 		
 	
 	def rotate(self):
-		pass
+		if self.curr_piece.shape != 'O':	# cannot rotate square
+			x_arr = self.curr_piece.xpos
+			y_arr = self.curr_piece.ypos
+			x = x_arr[2]	# rotate about 3rd square
+			y = y_arr[2]
+			# get distances from 
+			x_dist = [(x_arr[i]-x) for i in range(4)]
+			y_dist = [(y_arr[i]-y) for i in range(4)]
+			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
+			self.curr_piece.ypos = [(y+x_dist[i]) for i in range(4)]
+	
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions

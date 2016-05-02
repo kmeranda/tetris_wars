@@ -1,3 +1,5 @@
+### PLAYER 1 ###
+
 #pygame imports
 import sys
 import os
@@ -18,9 +20,7 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40211
-
-
+PLAYER_PORT = 40011
 
 ## Game ##
 class GameSpace:
@@ -64,6 +64,9 @@ class GameSpace:
 		for i in range(0, len(self.playerspace.board.images)):
 			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
+		for i in range(0, len(self.enemyspace.board.images)):
+			self.screen.blit(self.enemyspace.board.borders[i], self.enemyspace.board.borderRects[i])
+			self.screen.blit(self.enemyspace.board.images[i], self.enemyspace.board.rects[i])
 		for i in range(4):
 			self.screen.blit(self.playerspace.curr_piece.borders[i], self.playerspace.curr_piece.borderRects[i])
 			self.screen.blit(self.playerspace.curr_piece.images[i], self.playerspace.curr_piece.rects[i])
@@ -86,9 +89,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
-		self.board = Board(self) #initialize board
+		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
-	
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
@@ -103,8 +105,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 	def place(self):
 		# curr_piece tick logic looped until it hits the bottom
 		while not self.piece_landed:
-			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			self.curr_piece.tick()
+			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 		for i in range(4):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
@@ -115,8 +117,16 @@ class PlayerSpace(pygame.sprite.Sprite):
 		
 	
 	def rotate(self):
-		pass
-	
+		if self.curr_piece.shape != 'O':	# cannot rotate square
+			x_arr = self.curr_piece.xpos
+			y_arr = self.curr_piece.ypos
+			x = x_arr[2]	# rotate about 3rd square
+			y = y_arr[2]
+			# get distances from 
+			x_dist = [(x_arr[i]-x) for i in range(4)]
+			y_dist = [(y_arr[i]-y) for i in range(4)]
+			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
+			self.curr_piece.ypos = [(y+x_dist[i]) for i in range(4)]
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions
@@ -127,31 +137,40 @@ class PlayerSpace(pygame.sprite.Sprite):
 		return (num != 4)	# return True if there is a collision
 		
 	def tick(self):
-		#should be called when a piece lands
-		self.board.addPiece()
-		self.board.createSquares()
-		# curr_piece tick logic
-		self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
-		if self.piece_landed:	# add curr_piece to boardArray
-			for i in range(4):
-				x = self.curr_piece.xpos[i]
-				y = self.curr_piece.ypos[i]
-				s = self.curr_piece.shape
-				self.board.boardArray[y][x] = s
-			self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-			self.piece_landed = False
+		self.board.createSquares() #visually interpret board
+		#update current piece only on own board
+		if self.num == 1:
+			self.board.addPiece()
+			# curr_piece tick logic
+			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+			if self.piece_landed:	# add curr_piece to boardArray
+				for i in range(4):
+					x = self.curr_piece.xpos[i]
+					y = self.curr_piece.ypos[i]
+					s = self.curr_piece.shape
+					self.board.boardArray[y][x] = s
+				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+				self.piece_landed = False
 			
-		else:	# move curr_piece down
-			self.curr_piece.tick()
+			else:	# move curr_piece down
+				self.curr_piece.tick()
+			self.color = (255,255,255)
+			self.image.fill(self.color)
+			self.rect = self.image.get_rect()
+			self.rect.center = (self.xpos, self.ypos)
 
 
 ## BOARD ##
 class Board(pygame.sprite.Sprite):
-	def __init__(self, gs=None):
+	def __init__(self, player_num, gs=None):
 		pygame.sprite.Sprite.__init__(self)
 		self.gs = gs
 		self.width = 10
 		self.height = 20
+		if (player_num == 1):
+			self.start_xCoord = 10
+		elif (player_num == 2):
+			self.start_xCoord = 370
 		self.boardArray = [[0 for x in range(self.width)] for y in range(self.height)]
 		self.images = []
 		self.rects = []
@@ -176,7 +195,7 @@ class Board(pygame.sprite.Sprite):
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
-					self.centerx = 18+(24*(self.width-x))
+					self.centerx = self.start_xCoord+8+(24*x)
 					self.centery = 38+(24*(self.height-y))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
@@ -232,8 +251,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.xpos = [5,5,5,4]
 			self.ypos = [19,18,17,17]
 		elif self.shape=='T':
-			self.xpos = [3,4,5,4]
-			self.ypos = [19,19,19,18]
+			self.xpos = [3,4,4,5]
+			self.ypos = [19,18,19,19]
 		else:
 			print 'Invalid piece type'
 			exit(1)
@@ -268,7 +287,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 			elif (self.shape == 'T'): #purple
 				self.squareColor = (160, 32, 240)
 
-			self.centerx = 18+(24*(10-self.xpos[x]))
+			self.centerx = 18+(24*self.xpos[x])
 			self.centery = 38+(24*(20-self.ypos[x]))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
@@ -290,11 +309,14 @@ class ClientConnection(Protocol):
 		self.gs = gs
 	def connectionMade(self):
 		print "New connection made:", HOST, "port", PLAYER_PORT
-		array = pickle.dumps(self.gs.playerspace.board.boardArray)#pickle array to string
+		self.sendData()
+	def dataReceived(self, data): #receive other gamespace from server
+		#print "Received data"
+		self.gs.enemyspace.board.boardArray = pickle.loads(data)
+		self.sendData()
+	def sendData(self):
+		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
 		self.transport.write(array) #send updated gamespace to server
-		#receive other gamespace from server
-	def dataReceived(self, data):
-		print "Received data:", data
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT
 
