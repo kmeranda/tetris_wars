@@ -51,6 +51,7 @@ class GameSpace:
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
 		for i in range(0, len(self.playerspace.board.images)):
+			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
 		pygame.display.flip()
 
@@ -66,7 +67,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		else:
 			self.xpos = 500
 		self.color = (185,185,185)
-		self.image = pygame.Surface((250,500))
+		self.image = pygame.Surface((260,520))
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
@@ -91,6 +92,8 @@ class Board(pygame.sprite.Sprite):
 		self.boardArray = [[0 for x in range(self.width)] for y in range(self.height)]
 		self.images = []
 		self.rects = []
+		self.borders = []
+		self.borderRects = []
 	def createSquares(self):
 		for x in range(self.width):
 			for y in range(self.height):
@@ -109,13 +112,19 @@ class Board(pygame.sprite.Sprite):
 					self.squareColor = (0, 0, 255)
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
-				if (self.boardArray[y][x] != 0): #create square and rect for all filled coordinates
-					self.squareImage = pygame.Surface((25,25))
+				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
+					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
 					self.squareRect = self.squareImage.get_rect()
-					self.squareRect.center = ((15+(12.5*x)),(40+(12.5*y)))
+					self.squareRect.center = ((15+(12*x)),(40+(12*y)))
 					self.rects.append(self.squareRect)
+					self.border = pygame.Surface((26,26))
+					self.border.fill((0,0,0))
+					self.borders.append(self.border)
+					self.borderRect = self.border.get_rect()
+					self.borderRect.center = ((15+(12*x)),(40+(12*y)))
+					self.borderRects.append(self.borderRect)
 	def moveDown(self): #should reinit image and rect arrays
 		pass
 	def addPiece(self): #this is where a full piece should be added to the array
