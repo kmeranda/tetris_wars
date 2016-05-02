@@ -170,13 +170,13 @@ class Board(pygame.sprite.Sprite):
 	def moveDown(self): #should reinit image and rect arrays
 		pass
 	def addPiece(self): #this is where a full piece should be added to the array
-		self.boardArray[0][6] = 'O'
-		self.boardArray[1][5] = 'I'
-		self.boardArray[2][4] = 'S'
+		self.boardArray[0][0] = 'O'
+		self.boardArray[1][1] = 'I'
+		self.boardArray[2][2] = 'S'
 		self.boardArray[3][3] = 'Z'
-		self.boardArray[4][2] = 'L'
-		self.boardArray[5][1] = 'J'
-		self.boardArray[6][0] = 'T'
+		self.boardArray[4][4] = 'L'
+		self.boardArray[5][5] = 'J'
+		self.boardArray[6][6] = 'T'
 
 
 ## CURRENT PIECE ##
@@ -267,11 +267,14 @@ class ClientConnection(Protocol):
 		self.gs = gs
 	def connectionMade(self):
 		print "New connection made:", HOST, "port", PLAYER_PORT
-		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
-		self.transport.write(array) #send updated gamespace to server
+		self.sendData()
 	def dataReceived(self, data): #receive other gamespace from server
 		print "Received data"
 		self.gs.enemyspace.board.boardArray = pickle.loads(data)
+		self.sendData()
+	def sendData(self):
+		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
+		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT
 
