@@ -129,7 +129,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 			y_dist = [(y_arr[i]-y) for i in range(4)]
 			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
 			self.curr_piece.ypos = [(y+x_dist[i]) for i in range(4)]
-			if self.collision(): # rotate causes problems
+			if self.collision(self.board.boardArray, self.curr_piece): # rotate causes problems
 				self.curr_piece.xpos = x_arr
 				self.curr_piece.ypos = y_arr
 
