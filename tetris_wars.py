@@ -19,6 +19,7 @@ HOST = 'student02.cse.nd.edu'
 PLAYER_PORT = 40011
 
 
+
 ## Game ##
 class GameSpace:
 	def __init__(self):
@@ -85,6 +86,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 			self.rect = self.image.get_rect()
 			self.rect.center = (self.xpos, self.ypos)
 
+
 ## BOARD ##
 class Board(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
@@ -94,6 +96,9 @@ class Board(pygame.sprite.Sprite):
 		self.array = [[0 for x in range(self.width)] for y in range(self.height)]
 	def addPiece(self): #this is where a full piece should be added to the array
 		self.array[0][0] = 1
+		self.array[1][1] = 1
+
+
 
 ## SERVER CONNECTIONS ##
 class ClientConnection(Protocol):
