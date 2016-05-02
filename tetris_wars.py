@@ -188,7 +188,7 @@ class Board(pygame.sprite.Sprite):
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
-					self.centerx = self.start_xCoord+8+(24*(self.width-x))
+					self.centerx = self.start_xCoord+8+(24*x)
 					self.centery = 38+(24*(self.height-y))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
@@ -280,7 +280,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 			elif (self.shape == 'T'): #purple
 				self.squareColor = (160, 32, 240)
 
-			self.centerx = 18+(24*(10-self.xpos[x]))
+			self.centerx = 18+(24*self.xpos[x])
 			self.centery = 38+(24*(20-self.ypos[x]))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)

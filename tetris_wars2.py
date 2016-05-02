@@ -1,4 +1,4 @@
-### PLAYER 1 ###
+### PLAYER 2 ###
 
 #pygame imports
 import sys
@@ -107,8 +107,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 	def place(self):
 		# curr_piece tick logic looped until it hits the bottom
 		while not self.piece_landed:
-			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			self.curr_piece.tick()
+			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 		for i in range(4):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
@@ -188,7 +188,7 @@ class Board(pygame.sprite.Sprite):
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
-					self.centerx = self.start_xCoord+8+(24*(self.width-x))
+					self.centerx = self.start_xCoord+8+(24*x)
 					self.centery = 38+(24*(self.height-y))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
@@ -280,7 +280,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 			elif (self.shape == 'T'): #purple
 				self.squareColor = (160, 32, 240)
 
-			self.centerx = 18+(24*(10-self.xpos[x]))
+			self.centerx = 18+(24*self.xpos[x])
 			self.centery = 38+(24*(20-self.ypos[x]))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
