@@ -70,18 +70,41 @@ class PlayerSpace(pygame.sprite.Sprite):
 			self.xpos = 140
 		else:
 			self.xpos = 500
+		self.piece_landed = False
 		self.color = (185,185,185)
 		self.image = pygame.Surface((260,520))
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self) #initialize board
+		#del self.curr_piece
 		self.curr_piece = CurrentPiece(self)
+	def collision(self, board, piece):
+		num = 0
+		# check for collisions
+		for i in range(4):
+			if piece.ypos[i]-1>=0:
+				if board[piece.ypos[i]-1][piece.xpos[i]]==0:
+					num +=1
+		return (num != 4)	# return True if there is a collision
+		
 	def tick(self):
 		#should be called when a piece lands
 		self.board.addPiece()
 		self.board.createSquares()
-		self.curr_piece.tick()
+		# curr_piece tick logic
+		self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+		if self.piece_landed:	# add curr_piece to boardArray
+			for i in range(4):
+				x = self.curr_piece.xpos[i]
+				y = self.curr_piece.ypos[i]
+				s = self.curr_piece.shape
+				self.board.boardArray[y][x] = s
+			self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+			self.piece_landed = False
+			
+		else:	# move curr_piece down
+			self.curr_piece.tick()
 		if self.num == 1:
 			self.color = (255,255,255)
 			self.image.fill(self.color)
@@ -179,11 +202,13 @@ class CurrentPiece(pygame.sprite.Sprite):
 		else:
 			print 'Invalid piece type'
 			exit(1)
+		self.createSquares()
 
 	def tick(self):
+		# no collisions = move down
 		for i in range(4):
-			if self.ypos[i] >= 0:
-				self.ypos[i] -= 1
+			self.ypos[i] -= 1
+		# update graphics
 		self.createSquares()
 
 	def createSquares(self):
