@@ -129,7 +129,10 @@ class PlayerSpace(pygame.sprite.Sprite):
 			y_dist = [(y_arr[i]-y) for i in range(4)]
 			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
 			self.curr_piece.ypos = [(y+x_dist[i]) for i in range(4)]
-	
+			if self.curr_piece.collision(): # rotate causes problems
+				self.curr_piece.xpos = x_arr
+				self.curr_piece.ypos = y_arr
+
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions
@@ -137,6 +140,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 			if piece.ypos[i]-1>=0:
 				if board[piece.ypos[i]-1][piece.xpos[i]]==0:
 					num +=1
+			if piece.xpos[i]<0 or piece.xpos[i]>=len(board[i]):
+				return True
 		return (num != 4)	# return True if there is a collision
 		
 	def tick(self):
