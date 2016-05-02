@@ -50,7 +50,8 @@ class GameSpace:
 		self.screen.fill(self.black)
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
-		self.screen.blit(self.playerspace.board.squareImage, self.playerspace.board.squareRect)
+		for i in range(0, len(self.playerspace.board.images)):
+			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
 		pygame.display.flip()
 
 
@@ -87,19 +88,26 @@ class Board(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self)
 		self.width = 10
 		self.height = 20
-		self.array = [[0 for x in range(self.width)] for y in range(self.height)]
+		self.boardArray = [[0 for x in range(self.width)] for y in range(self.height)]
+		self.images = []
+		self.rects = []
 	def createSquares(self):
 		for x in range(self.width):
 			for y in range(self.height):
-				if self.array[y][x] == 1:
+				if self.boardArray[y][x] == 1:
 					self.squareColor = (255, 0, 0)
 					self.squareImage = pygame.Surface((25,25))
 					self.squareImage.fill(self.squareColor)
+					self.images.append(self.squareImage)
 					self.squareRect = self.squareImage.get_rect()
 					self.squareRect.center = ((15+(12.5*x)),(40+(12.5*y)))
+					self.rects.append(self.squareRect)
+	def moveDown(self): #should reinit image and rect arrays
+		pass
 	def addPiece(self): #this is where a full piece should be added to the array
-		self.array[0][0] = 1
-		self.array[1][1] = 1
+		self.boardArray[0][0] = 1
+		self.boardArray[1][1] = 1
+		self.boardArray[19][9] = 1
 
 
 
