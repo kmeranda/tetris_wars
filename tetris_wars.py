@@ -1,3 +1,5 @@
+### PLAYER 1 ###
+
 #pygame imports
 import sys
 import os
@@ -55,6 +57,9 @@ class GameSpace:
 		for i in range(0, len(self.playerspace.board.images)):
 			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
+		for i in range(0, len(self.enemyspace.board.images)):
+			self.screen.blit(self.enemyspace.board.borders[i], self.enemyspace.board.borderRects[i])
+			self.screen.blit(self.enemyspace.board.images[i], self.enemyspace.board.rects[i])
 		for i in range(4):
 			self.screen.blit(self.playerspace.curr_piece.borders[i], self.playerspace.curr_piece.borderRects[i])
 			self.screen.blit(self.playerspace.curr_piece.images[i], self.playerspace.curr_piece.rects[i])
@@ -77,8 +82,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
-		self.board = Board(self) #initialize board
-		#del self.curr_piece
+		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
 	def collision(self, board, piece):
 		num = 0
@@ -91,22 +95,23 @@ class PlayerSpace(pygame.sprite.Sprite):
 		
 	def tick(self):
 		#should be called when a piece lands
-		self.board.addPiece()
 		self.board.createSquares()
-		# curr_piece tick logic
-		self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
-		if self.piece_landed:	# add curr_piece to boardArray
-			for i in range(4):
-				x = self.curr_piece.xpos[i]
-				y = self.curr_piece.ypos[i]
-				s = self.curr_piece.shape
-				self.board.boardArray[y][x] = s
-			self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-			self.piece_landed = False
-			
-		else:	# move curr_piece down
-			self.curr_piece.tick()
+		#update current piece only on own board
 		if self.num == 1:
+			self.board.addPiece()
+			# curr_piece tick logic
+			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+			if self.piece_landed:	# add curr_piece to boardArray
+				for i in range(4):
+					x = self.curr_piece.xpos[i]
+					y = self.curr_piece.ypos[i]
+					s = self.curr_piece.shape
+					self.board.boardArray[y][x] = s
+				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+				self.piece_landed = False
+			
+			else:	# move curr_piece down
+				self.curr_piece.tick()
 			self.color = (255,255,255)
 			self.image.fill(self.color)
 			self.rect = self.image.get_rect()
@@ -115,11 +120,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 
 ## BOARD ##
 class Board(pygame.sprite.Sprite):
-	def __init__(self, gs=None):
+	def __init__(self, player_num, gs=None):
 		pygame.sprite.Sprite.__init__(self)
 		self.gs = gs
 		self.width = 10
 		self.height = 20
+		if (player_num == 1):
+			self.start_xCoord = 10
+		elif (player_num == 2):
+			self.start_xCoord = 370
 		self.boardArray = [[0 for x in range(self.width)] for y in range(self.height)]
 		self.images = []
 		self.rects = []
@@ -144,7 +153,7 @@ class Board(pygame.sprite.Sprite):
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
-					self.centerx = 18+(24*(self.width-x))
+					self.centerx = self.start_xCoord+8+(24*(self.width-x))
 					self.centery = 38+(24*(self.height-y))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
@@ -258,11 +267,14 @@ class ClientConnection(Protocol):
 		self.gs = gs
 	def connectionMade(self):
 		print "New connection made:", HOST, "port", PLAYER_PORT
-		array = pickle.dumps(self.gs.playerspace.board.boardArray)#pickle array to string
+		self.sendData()
+	def dataReceived(self, data): #receive other gamespace from server
+		#print "Received data"
+		self.gs.enemyspace.board.boardArray = pickle.loads(data)
+		self.sendData()
+	def sendData(self):
+		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
 		self.transport.write(array) #send updated gamespace to server
-		#receive other gamespace from server
-	def dataReceived(self, data):
-		print "Received data:", data
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT
 
