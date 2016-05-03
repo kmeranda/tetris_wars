@@ -39,6 +39,8 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
+		self.myfont = pygame.font.SysFont("monospace", 45)
+		self.title = self.myfont.render("Tetris Wars", 1, (255,255,255))
 
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -63,6 +65,7 @@ class GameSpace:
 		self.enemyspace.tick()
 		# 7. screen/display updating
 		self.screen.fill(self.black)
+		self.screen.blit(self.title, (self.width/2, 5))
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
 		for i in range(0, len(self.playerspace.board.images)):
