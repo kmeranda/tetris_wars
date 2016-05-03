@@ -286,7 +286,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 				self.squareColor = (160, 32, 240)
 
 			self.centerx = 23+(26*self.xpos[x])
-			self.centery = 43+(26*(20-self.ypos[x]+1))
+			self.centery = 43+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			self.images.append(self.squareImage)

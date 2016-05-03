@@ -12,13 +12,13 @@ from twisted.internet.defer import DeferredQueue
 
 
 #init port number
-PLAYER1_PORT = 40011
-PLAYER2_PORT = 40111
+PLAYER1_BOARDPORT = 40011
+PLAYER2_BOARDPORT = 40111
 
 
 #init queues
-P1_QUEUE = DeferredQueue()
-P2_QUEUE = DeferredQueue()
+P1_BOARDQUEUE = DeferredQueue()
+P2_BOARDQUEUE = DeferredQueue()
 
 
 ## player 1 ##
@@ -27,11 +27,11 @@ class Player1Connection(LineReceiver): #connects server
 		self.addr = addr
 	def connectionMade(self):
 		print "Connection received from Player 1:", self.addr
-		reactor.listenTCP(PLAYER2_PORT, Player2ConnFactory())
+		reactor.listenTCP(PLAYER2_BOARDPORT, Player2ConnFactory())
 	def dataReceived(self, data):
 		#print "Received Data:", data -- prints too much garbage
-		P2_QUEUE.put(data)
-		P1_QUEUE.get().addCallback(self.sendData)
+		P2_BOARDQUEUE.put(data)
+		P1_BOARDQUEUE.get().addCallback(self.sendData)
 	def sendData(self, data): #send data to player 1
 		self.transport.write(data)
 	def connectionLost(self, reason):
@@ -51,8 +51,8 @@ class Player2Connection(LineReceiver):
 		print "Connection received from Player 2:", self.addr
 	def dataReceived(self, data):
 		#print "Received Data", data -- prints too much garbage
-		P1_QUEUE.put(data)
-		P2_QUEUE.get().addCallback(self.sendData)
+		P1_BOARDQUEUE.put(data)
+		P2_BOARDQUEUE.get().addCallback(self.sendData)
 	def sendData(self, data): #send data to player 2
 		self.transport.write(data)
 	def connectionLost(self, reason):
@@ -64,5 +64,5 @@ class Player2ConnFactory(Factory):
 		return Player2Connection(addr)
 
 
-reactor.listenTCP(PLAYER1_PORT, Player1ConnFactory())
+reactor.listenTCP(PLAYER1_BOARDPORT, Player1ConnFactory())
 reactor.run() #starts event loop
