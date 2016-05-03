@@ -21,8 +21,7 @@ import cPickle as pickle
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
 BOARD_PORT = 40111
-PIECE_PORT = 40311
-SCORE_PORT = 40511
+SCORE_PORT = 40311
 
 
 
@@ -39,7 +38,7 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		self.myfont = pygame.font.SysFont("monospace", 15)
+		self.myfont = pygame.font.SysFont("monospace", 45)
 		self.title = self.myfont.render("Tetris Wars", 1, (255,255,255))
 
 	# 3. start game loop
@@ -190,6 +189,10 @@ class Board(pygame.sprite.Sprite):
 		self.borders = []
 		self.borderRects = []
 	def createSquares(self):
+		self.images = []
+		self.rects = []
+		self.borders = []
+		self.borderRects = []
 		for x in range(self.width):
 			for y in range(self.height):
 				#set square color depending on contents of array
@@ -222,8 +225,11 @@ class Board(pygame.sprite.Sprite):
 					self.borderRect = self.border.get_rect()
 					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
-	def moveDown(self): #should reinit image and rect arrays
-		pass
+	def moveDown(self):
+		for y in range(self.height):	# iterate through rows in board
+			if not 0 in self.boardArray[y]:	# check for no empty space in row
+				del self.boardArray[y]	# delete full row
+				self.boardArray.append([0 for x in range(self.width)]) # add empty row to top
 
 ## CURRENT PIECE ##
 class CurrentPiece(pygame.sprite.Sprite):
@@ -319,7 +325,10 @@ class ClientBoardConnection(Protocol):
 		self.gs.enemyspace.board.boardArray = pickle.loads(data)
 		self.sendData()
 	def sendData(self):
-		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
+		array = [[self.gs.playerspace.board.boardArray[y][x] for x in range(self.gs.playerspace.board.width)] for y in range(self.gs.playerspace.board.height)]
+		for i in range(4):
+			array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+		array = pickle.dumps(array)	
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):
 		print "Lost board connection with", HOST, "port", BOARD_PORT

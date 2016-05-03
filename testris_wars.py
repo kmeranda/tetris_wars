@@ -20,7 +20,9 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40011
+PLAYER_PORT = 40012
+
+
 
 ## Game ##
 class GameSpace:
@@ -127,6 +129,10 @@ class PlayerSpace(pygame.sprite.Sprite):
 			y_dist = [(y_arr[i]-y) for i in range(4)]
 			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
 			self.curr_piece.ypos = [(y+x_dist[i]) for i in range(4)]
+			if self.collision(self.board.boardArray, self.curr_piece): # rotate causes problems
+				self.curr_piece.xpos = x_arr
+				self.curr_piece.ypos = y_arr
+
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions
@@ -134,13 +140,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 			if piece.ypos[i]-1>=0:
 				if board[piece.ypos[i]-1][piece.xpos[i]]==0:
 					num +=1
+			if piece.xpos[i]<0 or piece.xpos[i]>=len(board[i]):
+				return True
 		return (num != 4)	# return True if there is a collision
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
+		self.board.moveDown() # delete full rows in board
 		#update current piece only on own board
 		if self.num == 1:
-			self.board.addPiece()
 			# curr_piece tick logic
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
@@ -177,6 +185,10 @@ class Board(pygame.sprite.Sprite):
 		self.borders = []
 		self.borderRects = []
 	def createSquares(self):
+		self.images = []
+		self.rects = []
+		self.borders = []
+		self.borderRects = []
 		for x in range(self.width):
 			for y in range(self.height):
 				#set square color depending on contents of array
@@ -195,8 +207,8 @@ class Board(pygame.sprite.Sprite):
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
-					self.centerx = self.start_xCoord+8+(24*x)
-					self.centery = 38+(24*(self.height-y))
+					self.centerx = self.start_xCoord+13+(26*x)
+					self.centery = 43+(26*(self.height-(y+1)))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
@@ -209,17 +221,11 @@ class Board(pygame.sprite.Sprite):
 					self.borderRect = self.border.get_rect()
 					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
-	def moveDown(self): #should reinit image and rect arrays
-		pass
-	def addPiece(self): #this is where a full piece should be added to the array
-		self.boardArray[0][0] = 'O'
-		self.boardArray[1][1] = 'I'
-		self.boardArray[2][2] = 'S'
-		self.boardArray[3][3] = 'Z'
-		self.boardArray[4][4] = 'L'
-		self.boardArray[5][5] = 'J'
-		self.boardArray[6][6] = 'T'
-
+	def moveDown(self):
+		for y in range(self.height):	# iterate through rows in board
+			if not 0 in self.boardArray[y]:	# check for no empty space in row
+				del self.boardArray[y]	# delete full row
+				self.boardArray.append([0 for x in range(self.width)]) # add empty row to top
 
 ## CURRENT PIECE ##
 class CurrentPiece(pygame.sprite.Sprite):
@@ -251,8 +257,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.xpos = [5,5,5,4]
 			self.ypos = [19,18,17,17]
 		elif self.shape=='T':
-			self.xpos = [3,4,4,5]
-			self.ypos = [19,18,19,19]
+			self.xpos = [3,4,5,4]
+			self.ypos = [19,19,19,18]
 		else:
 			print 'Invalid piece type'
 			exit(1)
@@ -287,8 +293,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 			elif (self.shape == 'T'): #purple
 				self.squareColor = (160, 32, 240)
 
-			self.centerx = 18+(24*self.xpos[x])
-			self.centery = 38+(24*(20-self.ypos[x]))
+			self.centerx = 23+(26*self.xpos[x])
+			self.centery = 43+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			self.images.append(self.squareImage)
@@ -315,7 +321,11 @@ class ClientConnection(Protocol):
 		self.gs.enemyspace.board.boardArray = pickle.loads(data)
 		self.sendData()
 	def sendData(self):
-		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
+		array = [[self.gs.playerspace.board.boardArray[y][x] for x in range(self.gs.playerspace.board.width)] for y in range(self.gs.playerspace.board.height)]
+		for i in range(4):
+			array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+		array = pickle.dumps(array)	
+		#array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to stringa
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):
 		print "Lost connection with", HOST, "port", PLAYER_PORT

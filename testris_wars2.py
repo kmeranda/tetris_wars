@@ -20,8 +20,7 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-BOARD_PORT = 40011
-SCORE_PORT = 40211
+PLAYER_PORT = 40112
 
 
 
@@ -38,8 +37,6 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		self.myfont = pygame.font.SysFont("monospace", 45)
-		self.title = self.myfont.render("Tetris Wars", 1, (255,255,255))
 
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -64,7 +61,6 @@ class GameSpace:
 		self.enemyspace.tick()
 		# 7. screen/display updating
 		self.screen.fill(self.black)
-		self.screen.blit(self.title, (self.width/2, 5))
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
 		for i in range(0, len(self.playerspace.board.images)):
@@ -97,7 +93,6 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
-		self.score = 500
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
@@ -151,6 +146,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
+		self.board.moveDown() # delete full rows in board
 		#update current piece only on own board
 		if self.num == 1:
 			# curr_piece tick logic
@@ -314,11 +310,11 @@ class CurrentPiece(pygame.sprite.Sprite):
 	
 
 ## SERVER CONNECTIONS ##
-class ClientBoardConnection(Protocol):
+class ClientConnection(Protocol):
 	def __init__(self, gs):
 		self.gs = gs
 	def connectionMade(self):
-		print "New board connection made:", HOST, "port", BOARD_PORT
+		print "New connection made:", HOST, "port", PLAYER_PORT
 		self.sendData()
 	def dataReceived(self, data): #receive other gamespace from server
 		#print "Received data"
@@ -329,44 +325,22 @@ class ClientBoardConnection(Protocol):
 		for i in range(4):
 			array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
 		array = pickle.dumps(array)	
+		#array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to stringa
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):
-		print "Lost board connection with", HOST, "port", BOARD_PORT
+		print "Lost connection with", HOST, "port", PLAYER_PORT
 
-class ClientBoardConnFactory(ClientFactory):
+class ClientConnFactory(ClientFactory):
 	def __init__(self, gs):
 		self.gs = gs
 	def buildProtocol(self,addr):
-		return ClientBoardConnection(self.gs)
+		return ClientConnection(self.gs)
 
-class ClientScoreConnection(Protocol):
-	def __init__(self, gs):
-		self.gs = gs
-	def connectionMade(self):
-		print "New score connection made:", HOST, "port", SCORE_PORT
-		self.sendData()
-	def dataReceived(self, data): #receive other gamespace from server
-		#print "Received data"
-		self.gs.enemyspace.score = pickle.loads(data)
-		print self.gs.enemyspace.score
-		self.sendData()
-	def sendData(self):
-		score = pickle.dumps(self.gs.playerspace.score) #pickle score to string
-		self.transport.write(score) #send score to server
-	def connectionLost(self, reason):
-		print "Lost score connection with", HOST, "port", SCORE_PORT
-
-class ClientScoreConnFactory(ClientFactory):
-	def __init__(self, gs):
-		self.gs = gs
-	def buildProtocol(self,addr):
-		return ClientScoreConnection(self.gs)
 
 
 if __name__ == '__main__':
 	gs = GameSpace()
 	lc = LoopingCall(gs.game_loop_iterate)	
 	lc.start(1/60)
-	reactor.connectTCP(HOST, BOARD_PORT, ClientBoardConnFactory(gs))
-	reactor.connectTCP(HOST, SCORE_PORT, ClientScoreConnFactory(gs))
+	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory(gs))
 	reactor.run()
