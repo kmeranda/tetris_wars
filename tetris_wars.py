@@ -20,7 +20,9 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40211
+BOARD_PORT = 40011
+PIECE_PORT = 40211
+SCORE_PORT = 40411
 
 
 
@@ -93,6 +95,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
+		self.score = 500
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
@@ -302,11 +305,11 @@ class CurrentPiece(pygame.sprite.Sprite):
 	
 
 ## SERVER CONNECTIONS ##
-class ClientConnection(Protocol):
+class ClientBoardConnection(Protocol):
 	def __init__(self, gs):
 		self.gs = gs
 	def connectionMade(self):
-		print "New connection made:", HOST, "port", PLAYER_PORT
+		print "New board connection made:", HOST, "port", BOARD_PORT
 		self.sendData()
 	def dataReceived(self, data): #receive other gamespace from server
 		#print "Received data"
@@ -316,19 +319,42 @@ class ClientConnection(Protocol):
 		array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to string
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):
-		print "Lost connection with", HOST, "port", PLAYER_PORT
+		print "Lost board connection with", HOST, "port", BOARD_PORT
 
-class ClientConnFactory(ClientFactory):
+class ClientBoardConnFactory(ClientFactory):
 	def __init__(self, gs):
 		self.gs = gs
 	def buildProtocol(self,addr):
-		return ClientConnection(self.gs)
+		return ClientBoardConnection(self.gs)
 
+class ClientScoreConnection(Protocol):
+	def __init__(self, gs):
+		self.gs = gs
+	def connectionMade(self):
+		print "New score connection made:", HOST, "port", SCORE_PORT
+		self.sendData()
+	def dataReceived(self, data): #receive other gamespace from server
+		#print "Received data"
+		self.gs.enemyspace.score = pickle.loads(data)
+		print self.gs.enemyspace.score
+		self.sendData()
+	def sendData(self):
+		score = pickle.dumps(self.gs.playerspace.score) #pickle score to string
+		self.transport.write(score) #send score to server
+	def connectionLost(self, reason):
+		print "Lost score connection with", HOST, "port", SCORE_PORT
+
+class ClientScoreConnFactory(ClientFactory):
+	def __init__(self, gs):
+		self.gs = gs
+	def buildProtocol(self,addr):
+		return ClientScoreConnection(self.gs)
 
 
 if __name__ == '__main__':
 	gs = GameSpace()
 	lc = LoopingCall(gs.game_loop_iterate)	
 	lc.start(1/60)
-	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory(gs))
+	reactor.connectTCP(HOST, BOARD_PORT, ClientBoardConnFactory(gs))
+	reactor.connectTCP(HOST, SCORE_PORT, ClientScoreConnFactory(gs))
 	reactor.run()
