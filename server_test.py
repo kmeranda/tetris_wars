@@ -12,8 +12,8 @@ from twisted.internet.defer import DeferredQueue
 
 
 #init port number
-PLAYER1_BOARDPORT = 40211
-PLAYER2_BOARDPORT = 40311
+PLAYER1_BOARDPORT = 40012
+PLAYER2_BOARDPORT = 40112
 
 
 #init queues
