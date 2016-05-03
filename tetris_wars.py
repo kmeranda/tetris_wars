@@ -98,7 +98,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
-		self.score = 500
+		self.score = 0
+		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
