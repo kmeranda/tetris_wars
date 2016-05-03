@@ -20,7 +20,7 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40311
+PLAYER_PORT = 40211
 
 
 
@@ -203,7 +203,7 @@ class Board(pygame.sprite.Sprite):
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
-					self.centery = 38+(26*(self.height-y))
+					self.centery = 43+(26*(self.height-(y+1)))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
@@ -286,7 +286,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 				self.squareColor = (160, 32, 240)
 
 			self.centerx = 23+(26*self.xpos[x])
-			self.centery = 38+(26*(20-self.ypos[x]))
+			self.centery = 43+(26*(20-self.ypos[x]+1))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			self.images.append(self.squareImage)
