@@ -152,6 +152,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
+		self.score += self.board.moveDown() # delete full rows in board and increase score
 		#update current piece only on own board
 		if self.num == 1:
 			# curr_piece tick logic
@@ -227,10 +228,14 @@ class Board(pygame.sprite.Sprite):
 					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
 	def moveDown(self):
+		updateScore = 0
 		for y in range(self.height):	# iterate through rows in board
 			if not 0 in self.boardArray[y]:	# check for no empty space in row
 				del self.boardArray[y]	# delete full row
 				self.boardArray.append([0 for x in range(self.width)]) # add empty row to top
+				updateScore += 1
+		return updateScore
+
 
 ## CURRENT PIECE ##
 class CurrentPiece(pygame.sprite.Sprite):
@@ -349,7 +354,7 @@ class ClientScoreConnection(Protocol):
 	def dataReceived(self, data): #receive other gamespace from server
 		#print "Received data"
 		self.gs.enemyspace.score = pickle.loads(data)
-		print self.gs.enemyspace.score
+		#print self.gs.enemyspace.score
 		self.sendData()
 	def sendData(self):
 		score = pickle.dumps(self.gs.playerspace.score) #pickle score to string

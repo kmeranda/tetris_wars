@@ -21,8 +21,6 @@ PLAYER2_SCOREPORT = 40311
 #init queues
 P1_BOARDQUEUE = DeferredQueue()
 P2_BOARDQUEUE = DeferredQueue()
-P1_PIECEQUEUE = DeferredQueue()
-P2_PIECEQUEUE = DeferredQueue()
 P1_SCOREQUEUE = DeferredQueue()
 P2_SCOREQUEUE = DeferredQueue()
 
