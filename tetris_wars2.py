@@ -1,4 +1,4 @@
-### PLAYER 2 ###
+### PLAYER 1 ###
 
 #pygame imports
 import sys
@@ -20,7 +20,7 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40111
+PLAYER_PORT = 40311
 
 
 
@@ -87,7 +87,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 			self.xpos = 500
 		self.piece_landed = False
 		self.color = (185,185,185)
-		self.image = pygame.Surface((260,520))
+		self.image = pygame.Surface((240,480))
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
@@ -129,7 +129,10 @@ class PlayerSpace(pygame.sprite.Sprite):
 			y_dist = [(y_arr[i]-y) for i in range(4)]
 			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
 			self.curr_piece.ypos = [(y+x_dist[i]) for i in range(4)]
-		
+			if self.collision(self.board.boardArray, self.curr_piece): # rotate causes problems
+				self.curr_piece.xpos = x_arr
+				self.curr_piece.ypos = y_arr
+
 	def collision(self, board, piece):
 		num = 0
 		# check for collisions
@@ -137,13 +140,14 @@ class PlayerSpace(pygame.sprite.Sprite):
 			if piece.ypos[i]-1>=0:
 				if board[piece.ypos[i]-1][piece.xpos[i]]==0:
 					num +=1
+			if piece.xpos[i]<0 or piece.xpos[i]>=len(board[i]):
+				return True
 		return (num != 4)	# return True if there is a collision
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
 		#update current piece only on own board
 		if self.num == 1:
-			self.board.addPiece()
 			# curr_piece tick logic
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
@@ -214,15 +218,6 @@ class Board(pygame.sprite.Sprite):
 					self.borderRects.append(self.borderRect)
 	def moveDown(self): #should reinit image and rect arrays
 		pass
-	def addPiece(self): #this is where a full piece should be added to the array
-		self.boardArray[0][0] = 'O'
-		self.boardArray[1][1] = 'I'
-		self.boardArray[2][2] = 'S'
-		self.boardArray[3][3] = 'Z'
-		self.boardArray[4][4] = 'L'
-		self.boardArray[5][5] = 'J'
-		self.boardArray[6][6] = 'T'
-
 
 ## CURRENT PIECE ##
 class CurrentPiece(pygame.sprite.Sprite):

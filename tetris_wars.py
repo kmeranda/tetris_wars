@@ -20,7 +20,7 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40011
+PLAYER_PORT = 40211
 
 
 
@@ -87,7 +87,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 			self.xpos = 500
 		self.piece_landed = False
 		self.color = (185,185,185)
-		self.image = pygame.Surface((260,520))
+		self.image = pygame.Surface((240,480))
 		self.image.fill(self.color)
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
