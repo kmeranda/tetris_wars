@@ -30,7 +30,7 @@ class GameSpace:
 	def __init__(self):
 		# 1. init game space
 		pygame.init()
-		self.size = self.width, self.height = (640, 580)
+		self.size = self.width, self.height = (640, 640)
 		self.screen = pygame.display.set_mode(self.size)
 		self.black = (0,0,0)
 
@@ -38,8 +38,10 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		self.myfont = pygame.font.SysFont("monospace", 45)
-		self.title = self.myfont.render("Tetris Wars", 1, (255,255,255))
+		self.titlefont = pygame.font.SysFont("monospace", 50)
+		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
+		self.playerFont = pygame.font.SysFont("monospace", 30)
+		self.playerHeader = self.playerFont.render("Player 1", 1, (255,255,255))
 
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -64,7 +66,8 @@ class GameSpace:
 		self.enemyspace.tick()
 		# 7. screen/display updating
 		self.screen.fill(self.black)
-		self.screen.blit(self.title, (self.width/2, 5))
+		self.screen.blit(self.title, (225, 3))
+		self.screen.blit(self.playerHeader, (280, 40))
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
 		for i in range(0, len(self.playerspace.board.images)):
@@ -214,7 +217,7 @@ class Board(pygame.sprite.Sprite):
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
-					self.centery = 43+(26*(self.height-(y+1)))
+					self.centery = 73+(26*(self.height-(y+1)))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
@@ -304,7 +307,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 				self.squareColor = (160, 32, 240)
 
 			self.centerx = 23+(26*self.xpos[x])
-			self.centery = 43+(26*(20-(self.ypos[x]+1)))
+			self.centery = 73+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			self.images.append(self.squareImage)
