@@ -405,7 +405,7 @@ class Explosion(pygame.sprite.Sprite):
 			self.image = pygame.transform.scale(self.image, (600, 600))
 			self.frame += 1
 		else:
-			self.image = pygame.image.load("explosion/empty.png")
+			self.image = pygame.image.load("empty.png")
 
 
 ## FIREWORKS##
@@ -426,7 +426,7 @@ class Fireworks(pygame.sprite.Sprite):
 			self.image = pygame.transform.scale(self.image, (600, 600))
 			self.frame += 1
 		else:
-			self.image = pygame.image.load("explosion/empty.png")
+			self.image = pygame.image.load("empty.png")
 
 
 ## SERVER CONNECTIONS ##
