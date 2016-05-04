@@ -42,6 +42,9 @@ class GameSpace:
 		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
 		self.playerFont = pygame.font.SysFont("monospace", 30)
 		self.playerHeader = self.playerFont.render("Player 1", 1, (255,255,255))
+		self.playerBoardCaption = self.playerFont.render("Player's Board", 1, (255,255,255))
+		self.opponentBoardCaption = self.playerFont.render("Opponent's Board", 1, (255,255,255))
+		self.scoreCaption = self.playerFont.render("Score: ", 1, (255,255,255))
 
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -66,10 +69,13 @@ class GameSpace:
 		self.enemyspace.tick()
 		# 7. screen/display updating
 		self.screen.fill(self.black)
+		#titles
 		self.screen.blit(self.title, (225, 3))
 		self.screen.blit(self.playerHeader, (280, 40))
+		#board backgrounds
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
+		#contents of boards
 		for i in range(0, len(self.playerspace.board.images)):
 			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
@@ -79,6 +85,11 @@ class GameSpace:
 		for i in range(4):
 			self.screen.blit(self.playerspace.curr_piece.borders[i], self.playerspace.curr_piece.borderRects[i])
 			self.screen.blit(self.playerspace.curr_piece.images[i], self.playerspace.curr_piece.rects[i])
+		#board captions/scores
+		self.screen.blit(self.playerBoardCaption, (70, 590))
+		self.screen.blit(self.opponentBoardCaption, (410, 590))
+		self.screen.blit(self.scoreCaption, (70, 610))
+		self.screen.blit(self.scoreCaption, (410, 610))
 		pygame.display.flip()
 
 
