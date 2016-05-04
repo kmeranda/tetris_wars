@@ -172,6 +172,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
 			s = self.curr_piece.shape
+			if self.curr_piece.powerup == i:
+				s = s.lower()
 			try:
 				self.board.boardArray[y][x] = s
 			except:
@@ -209,14 +211,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 					return True
 		return False
 	
-	def powerup(self, num):	# powerup activated
-		pass
+	def activate_powerup(self, num):	# powerup activated
+		if num > 0:
+			print 'deleted row with', num, 'powerup(s)'
 
 	def tick(self):
 		self.board.createSquares() #visually interpret board
 		board_return = self.board.moveDown()
 		self.score += board_return[0] # delete full rows in board and increase score
-		self.powerup(board_return[1])
+		self.activate_powerup(board_return[1])
 		self.state = self.board.boardArray[self.board.height-1][self.board.width-1]
 		#update current piece only on own board
 		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
@@ -229,6 +232,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 					x = self.curr_piece.xpos[i]
 					y = self.curr_piece.ypos[i]
 					s = self.curr_piece.shape
+					if self.curr_piece.powerup == i:
+						s = s.lower()
 					try:
 						self.board.boardArray[y][x] = s
 					except:
@@ -319,7 +324,7 @@ class Board(pygame.sprite.Sprite):
 		powerups = 0
 		for y in range(self.height):	# iterate through rows in board
 			if not 0 in self.boardArray[y]:	# check for no empty space in row
-				for x in self.boardArray[y]:
+				for x in range(self.width):
 					if self.boardArray[y][x].islower(): # is a powerup
 						powerups += 1
 				del self.boardArray[y]	# delete full row
@@ -333,8 +338,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
 		shapes = ['O', 'I', 'S', 'Z', 'L', 'J', 'T']
 		self.shape = choice(shapes)	# randomly choose shape for piece
-		if randint(1,5) == 3:	# if powerup, shape encoding is lowercase
-			self.shape = self.shape.lower()
+		self.powerup =  randint(0,3)	# 0-3 indicate a power up on one of the spots, else is no powerup on the piece
 		self.xpos = [0,0,0,0]
 		self.ypos = [0,0,0,0]
 		self.images = []
@@ -391,19 +395,19 @@ class CurrentPiece(pygame.sprite.Sprite):
 		for x in range(4):
 			# add default blank image
 			#set square color depending on contents of array
-			if (self.shape in ['O','o']): #yellow
+			if (self.shape == 'O'): #yellow
 				self.squareColor = (255, 255, 0)
-			elif (self.shape in ['I','i']): #teal
+			elif (self.shape == 'I'): #teal
 				self.squareColor = (0, 255, 255)
-			elif (self.shape in ['S','s']): #red
+			elif (self.shape == 'S'): #red
 				self.squareColor = (255, 0, 0)
-			elif (self.shape in ['Z','z']): #green
+			elif (self.shape == 'Z'): #green
 				self.squareColor = (34, 139, 34)
-			elif (self.shape in ['L','l']): #orange
+			elif (self.shape == 'L'): #orange
 				self.squareColor = (255, 140, 0)
-			elif (self.shape in ['J','j']): #blue
+			elif (self.shape == 'J'): #blue
 				self.squareColor = (0, 0, 255)
-			elif (self.shape in ['T','t']): #purple
+			elif (self.shape == 'T'): #purple
 				self.squareColor = (160, 32, 240)
 			self.centerx = 23+(26*self.xpos[x])
 			self.centery = 73+(26*(20-(self.ypos[x]+1)))
@@ -424,13 +428,16 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.borderRect.center = (self.centerx, self.centery)
 			self.borderRects.append(self.borderRect)
 			#powerup
-			if self.shape.lower() == self.shape: #lowercase -- powerup	
-				self.powerupImage = pygame.image.load("star.png")
-				self.powerupImage = pygame.transform.scale(self.powerupImage, (20, 20)) #scale image larger
-				self.powerups.append(self.powerupImage)
-				self.powerupRect = self.powerupImage.get_rect()
-				self.powerupRect.center = (self.centerx, self.centery)
-				self.powerupRects.append(self.powerupRect)
+		if self.powerup < 4 and self.ypos[x]<19: #lowercase -- powerup
+			# center of the square with the powerup
+			self.centerx = 23+(26*self.xpos[self.powerup])
+			self.centery = 73+(26*(20-(self.ypos[self.powerup]+1)))
+			self.powerupImage = pygame.image.load("star.png")
+			self.powerupImage = pygame.transform.scale(self.powerupImage, (20, 20)) #scale image larger
+			self.powerups.append(self.powerupImage)
+			self.powerupRect = self.powerupImage.get_rect()
+			self.powerupRect.center = (self.centerx, self.centery)
+			self.powerupRects.append(self.powerupRect)
 	
 
 ## EXPLOSION ##
