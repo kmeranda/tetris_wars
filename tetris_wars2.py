@@ -38,6 +38,7 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
+		#text objects
 		self.titleFont = pygame.font.SysFont("monospace", 50)
 		self.title = self.titleFont.render("Tetris Wars", 1, (255,255,255))
 		self.playerFont = pygame.font.SysFont("monospace", 30)
@@ -47,6 +48,8 @@ class GameSpace:
 		self.scoreCaption = self.playerFont.render("Score: ", 1, (255,255,255))
 		self.winFont = pygame.font.SysFont("monospace", 50)
 		self.winFont.set_bold(True)
+		#animations
+		self.winAnimation = None		
 		
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -107,10 +110,17 @@ class GameSpace:
 		if (self.playerspace.state + self.enemyspace.state) == 2: #if both games are over, determine winner
 			if self.playerspace.score > self.enemyspace.score: #you have higher score
 				self.winText = 'YOU WIN!!'
+				if self.winAnimation == None:
+					self.winAnimation = Fireworks(self)
 			elif self.enemyspace.score > self.playerspace.score: #opp has higher score
 				self.winText = 'YOU LOSE.'
+				if self.winAnimation == None:
+					self.winAnimation = Explosion(self)
 			else: #draw
 				self.winText = "IT'S A TIE."
+		if self.winAnimation:
+			self.winAnimation.tick()
+			self.screen.blit(self.winAnimation.image, self.winAnimation.rect)
 		self.myState = self.playerFont.render(self.myStateText, 1, (178,34,34))
 		self.screen.blit(self.myState, (70, 320))
 		self.oppState = self.playerFont.render(self.oppStateText, 1, (178,34,34))
@@ -141,37 +151,35 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.score = 0
 		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
-		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
 			self.curr_piece.xpos[i] += dir
-			if self.curr_piece.xpos[i]<0 or self.curr_piece.xpos[i]>=self.board.width:
-				edge = True
-		if edge:
+		if self.collision(self.board.boardArray, self.curr_piece):
 			for i in range(4):
 				self.curr_piece.xpos[i] -= dir
-			
 
 	def place(self):
 		# curr_piece tick logic looped until it hits the bottom
-		while not self.piece_landed:
+		while not self.collision(self.board.boardArray, self.curr_piece):
 			self.curr_piece.tick()
-			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+		self.curr_piece.untick()
 		for i in range(4):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
 			s = self.curr_piece.shape
-			self.board.boardArray[y][x] = s
+			try:
+				self.board.boardArray[y][x] = s
+			except:
+				pass
 		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
 		if self.collision(self.board.boardArray, self.curr_piece):
 			self.state = 1
 			self.board.boardArray[self.board.height-1][self.board.width-1] = 1
-		self.piece_landed = False
-		
+			self.curr_piece.untick()
 	
 	def rotate(self):
 		if self.curr_piece.shape != 'O':	# cannot rotate square
-			x_arr = self.curr_piece.xpos
-			y_arr = self.curr_piece.ypos
+			x_arr = [self.curr_piece.xpos[i] for i in range(4)]
+			y_arr = [self.curr_piece.ypos[i] for i in range(4)]
 			x = x_arr[2]	# rotate about 3rd square
 			y = y_arr[2]
 			# get distances from 
@@ -185,14 +193,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 
 	def collision(self, board, piece):
 		num = 0
-		# check for collisions
 		for i in range(4):
-			if piece.ypos[i]-1>=0:
-				if board[piece.ypos[i]-1][piece.xpos[i]]==0:
-					num +=1
-			if piece.xpos[i]<0 or piece.xpos[i]>=len(board[i]):
+			if piece.ypos[i]<0:	# collision with bottom
 				return True
-		return (num != 4)	# return True if there is a collision
+			if piece.xpos[i]<0 or piece.xpos[i]>len(board[i])-1: # collision with sides
+				return True
+			if piece.ypos[i]<len(board):	# only an issue for end game
+				if board[piece.ypos[i]][piece.xpos[i]]!=0:	# collision with other piece
+					return True
+		return False
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
@@ -201,21 +210,25 @@ class PlayerSpace(pygame.sprite.Sprite):
 		#update current piece only on own board
 		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
 			# curr_piece tick logic
+			self.curr_piece.tick()
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
+				self.curr_piece.untick()
 				for i in range(4):
 					x = self.curr_piece.xpos[i]
 					y = self.curr_piece.ypos[i]
 					s = self.curr_piece.shape
-					self.board.boardArray[y][x] = s
+					try:
+						self.board.boardArray[y][x] = s
+					except:
+						pass
 				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-				if self.collision(self.board.boardArray, self.curr_piece):
+				while self.collision(self.board.boardArray, self.curr_piece):
 					self.state = 1
 					self.board.boardArray[self.board.height-1][self.board.width-1] = 1
+					self.curr_piece.untick()
 				self.piece_landed = False
 			
-			else:	# move curr_piece down
-				self.curr_piece.tick()
 			self.color = (255,255,255)
 			self.image.fill(self.color)
 			self.rect = self.image.get_rect()
@@ -323,12 +336,17 @@ class CurrentPiece(pygame.sprite.Sprite):
 		self.createSquares()
 
 	def tick(self):
-		# no collisions = move down
 		for i in range(4):
 			self.ypos[i] -= 1
 		# update graphics
 		self.createSquares()
 
+	def untick(self):
+		for i in range(4):
+			self.ypos[i] += 1
+		# update graphics
+		self.createSquares()
+	
 	def createSquares(self):
 		self.images = []
 		self.rects = []
@@ -355,6 +373,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.centery = 73+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
+			if self.ypos[x]>19:	# end pieces
+				self.squareImage.fill((0,0,0))
 			self.images.append(self.squareImage)
 			self.squareRect = self.squareImage.get_rect()
 			self.squareRect.center = (self.centerx, self.centery)
@@ -366,6 +386,48 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.borderRect.center = (self.centerx, self.centery)
 			self.borderRects.append(self.borderRect)
 	
+
+## EXPLOSION ##
+class Explosion(pygame.sprite.Sprite):
+	def __init__(self, gs=None):
+		pygame.sprite.Sprite.__init__(self)
+		self.gs = gs
+		self.image = pygame.image.load("explosion/frames016a.png")
+		self.image = pygame.transform.scale(self.image, (600, 600)) #scale image larger
+		self.rect = self.image.get_rect()
+		self.rect.center = (self.gs.width/2,self.gs.height/2)
+		self.frame = 0
+	def tick(self):
+		if self.frame < 16: #go through all frames of the explosion
+			filename = 'explosion/frames{0:03d}a.png'.format(self.frame)
+			self.image = pygame.image.load(filename)
+			self.size = self.imageWidth, self.imageHeight = self.image.get_size()
+			self.image = pygame.transform.scale(self.image, (600, 600))
+			self.frame += 1
+		else:
+			self.image = pygame.image.load("empty.png")
+
+
+## FIREWORKS##
+class Fireworks(pygame.sprite.Sprite):
+	def __init__(self, gs=None):
+		pygame.sprite.Sprite.__init__(self)
+		self.gs = gs
+		self.image = pygame.image.load("firework/fireworks00.png")
+		self.image = pygame.transform.scale(self.image, (600, 600)) #scale image larger
+		self.rect = self.image.get_rect()
+		self.rect.center = (self.gs.width/2,self.gs.height/2)
+		self.frame = 0
+	def tick(self):
+		if self.frame < 14: #go through all frames
+			filename = 'firework/fireworks{0:02d}.png'.format(self.frame)
+			self.image = pygame.image.load(filename)
+			self.size = self.imageWidth, self.imageHeight = self.image.get_size()
+			self.image = pygame.transform.scale(self.image, (600, 600))
+			self.frame += 1
+		else:
+			self.image = pygame.image.load("empty.png")
+
 
 ## SERVER CONNECTIONS ##
 class ClientBoardConnection(Protocol):
@@ -381,7 +443,10 @@ class ClientBoardConnection(Protocol):
 	def sendData(self):
 		array = [[self.gs.playerspace.board.boardArray[y][x] for x in range(self.gs.playerspace.board.width)] for y in range(self.gs.playerspace.board.height)]
 		for i in range(4):
-			array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+			try:
+				array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+			except:
+				pass
 		array = pickle.dumps(array)	
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):

@@ -38,13 +38,18 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		self.titlefont = pygame.font.SysFont("monospace", 50)
-		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
+		#text objects
+		self.titleFont = pygame.font.SysFont("monospace", 50)
+		self.title = self.titleFont.render("Tetris Wars", 1, (255,255,255))
 		self.playerFont = pygame.font.SysFont("monospace", 30)
 		self.playerHeader = self.playerFont.render("Player 2", 1, (255,255,255))
 		self.playerBoardCaption = self.playerFont.render("Player's Board", 1, (255,255,255))
 		self.opponentBoardCaption = self.playerFont.render("Opponent's Board", 1, (255,255,255))
 		self.scoreCaption = self.playerFont.render("Score: ", 1, (255,255,255))
+		self.winFont = pygame.font.SysFont("monospace", 50)
+		self.winFont.set_bold(True)
+		#animations
+		self.winAnimation = None		
 
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -94,6 +99,34 @@ class GameSpace:
 		self.screen.blit(self.myScore, (140, 610))
 		self.oppScore = self.playerFont.render(str(self.enemyspace.score), 1, (255,255,255))
 		self.screen.blit(self.oppScore, (480, 610))
+		#gameover/winner displays
+		self.myStateText = ''
+		self.oppStateText = ''
+		self.winText = ''
+		if self.playerspace.state == 1: #your game is over
+			self.myStateText = 'GAME OVER'
+		if self.enemyspace.state == 1: #opponent's game is over
+			self.oppStateText = 'GAME OVER'
+		if (self.playerspace.state + self.enemyspace.state) == 2: #if both games are over, determine winner
+			if self.playerspace.score > self.enemyspace.score: #you have higher score
+				self.winText = 'YOU WIN!!'
+				if self.winAnimation == None:
+					self.winAnimation = Fireworks(self)
+			elif self.enemyspace.score > self.playerspace.score: #opp has higher score
+				self.winText = 'YOU LOSE.'
+				if self.winAnimation == None:
+					self.winAnimation = Explosion(self)
+			else: #draw
+				self.winText = "IT'S A TIE."
+		if self.winAnimation:
+			self.winAnimation.tick()
+			self.screen.blit(self.winAnimation.image, self.winAnimation.rect)
+		self.myState = self.playerFont.render(self.myStateText, 1, (178,34,34))
+		self.screen.blit(self.myState, (70, 320))
+		self.oppState = self.playerFont.render(self.oppStateText, 1, (178,34,34))
+		self.screen.blit(self.oppState, (450, 320))
+		self.win = self.winFont.render(self.winText, 1, (178,34,34))
+		self.screen.blit(self.win, (225, 320))
 		pygame.display.flip()
 
 
@@ -174,6 +207,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 	def tick(self):
 		self.board.createSquares() #visually interpret board
 		self.score += self.board.moveDown() # delete full rows in board and increase score
+		self.state = self.board.boardArray[self.board.height-1][self.board.width-1]
 		#update current piece only on own board
 		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
 			# curr_piece tick logic
@@ -342,6 +376,48 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.borderRect.center = (self.centerx, self.centery)
 			self.borderRects.append(self.borderRect)
 	
+
+## EXPLOSION ##
+class Explosion(pygame.sprite.Sprite):
+	def __init__(self, gs=None):
+		pygame.sprite.Sprite.__init__(self)
+		self.gs = gs
+		self.image = pygame.image.load("explosion/frames016a.png")
+		self.image = pygame.transform.scale(self.image, (600, 600)) #scale image larger
+		self.rect = self.image.get_rect()
+		self.rect.center = (self.gs.width/2,self.gs.height/2)
+		self.frame = 0
+	def tick(self):
+		if self.frame < 16: #go through all frames of the explosion
+			filename = 'explosion/frames{0:03d}a.png'.format(self.frame)
+			self.image = pygame.image.load(filename)
+			self.size = self.imageWidth, self.imageHeight = self.image.get_size()
+			self.image = pygame.transform.scale(self.image, (600, 600))
+			self.frame += 1
+		else:
+			self.image = pygame.image.load("explosion/empty.png")
+
+
+## FIREWORKS##
+class Fireworks(pygame.sprite.Sprite):
+	def __init__(self, gs=None):
+		pygame.sprite.Sprite.__init__(self)
+		self.gs = gs
+		self.image = pygame.image.load("firework/fireworks00.png")
+		self.image = pygame.transform.scale(self.image, (600, 600)) #scale image larger
+		self.rect = self.image.get_rect()
+		self.rect.center = (self.gs.width/2,self.gs.height/2)
+		self.frame = 0
+	def tick(self):
+		if self.frame < 14: #go through all frames
+			filename = 'firework/fireworks{0:02d}.png'.format(self.frame)
+			self.image = pygame.image.load(filename)
+			self.size = self.imageWidth, self.imageHeight = self.image.get_size()
+			self.image = pygame.transform.scale(self.image, (600, 600))
+			self.frame += 1
+		else:
+			self.image = pygame.image.load("explosion/empty.png")
+
 
 ## SERVER CONNECTIONS ##
 class ClientBoardConnection(Protocol):
