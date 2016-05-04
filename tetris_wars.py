@@ -498,6 +498,8 @@ class ClientBoardConnection(Protocol):
 		for i in range(4):
 			try:
 				array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+				if i == self.gs.playerspace.curr_piece.powerup:
+					array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape.lower()
 			except:
 				pass
 		array = pickle.dumps(array)	
