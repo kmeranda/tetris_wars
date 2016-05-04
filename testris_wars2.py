@@ -50,7 +50,7 @@ class GameSpace:
 		self.winFont.set_bold(True)
 		#animations
 		self.winAnimation = None		
-
+		
 	# 3. start game loop
 	def game_loop_iterate(self):
 		# 4. clock tick regulation (framerate)
@@ -151,37 +151,35 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.score = 0
 		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
-		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
 			self.curr_piece.xpos[i] += dir
-			if self.curr_piece.xpos[i]<0 or self.curr_piece.xpos[i]>=self.board.width:
-				edge = True
-		if edge:
+		if self.collision(self.board.boardArray, self.curr_piece):
 			for i in range(4):
 				self.curr_piece.xpos[i] -= dir
-			
 
 	def place(self):
 		# curr_piece tick logic looped until it hits the bottom
-		while not self.piece_landed:
+		while not self.collision(self.board.boardArray, self.curr_piece):
 			self.curr_piece.tick()
-			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
+		self.curr_piece.untick()
 		for i in range(4):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
 			s = self.curr_piece.shape
-			self.board.boardArray[y][x] = s
+			try:
+				self.board.boardArray[y][x] = s
+			except:
+				pass
 		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
 		if self.collision(self.board.boardArray, self.curr_piece):
 			self.state = 1
 			self.board.boardArray[self.board.height-1][self.board.width-1] = 1
-		self.piece_landed = False
-		
+			self.curr_piece.untick()
 	
 	def rotate(self):
 		if self.curr_piece.shape != 'O':	# cannot rotate square
-			x_arr = self.curr_piece.xpos
-			y_arr = self.curr_piece.ypos
+			x_arr = [self.curr_piece.xpos[i] for i in range(4)]
+			y_arr = [self.curr_piece.ypos[i] for i in range(4)]
 			x = x_arr[2]	# rotate about 3rd square
 			y = y_arr[2]
 			# get distances from 
@@ -195,14 +193,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 
 	def collision(self, board, piece):
 		num = 0
-		# check for collisions
 		for i in range(4):
-			if piece.ypos[i]-1>=0:
-				if board[piece.ypos[i]-1][piece.xpos[i]]==0:
-					num +=1
-			if piece.xpos[i]<0 or piece.xpos[i]>=len(board[i]):
+			if piece.ypos[i]<0:	# collision with bottom
 				return True
-		return (num != 4)	# return True if there is a collision
+			if piece.xpos[i]<0 or piece.xpos[i]>len(board[i])-1: # collision with sides
+				return True
+			if piece.ypos[i]<len(board):	# only an issue for end game
+				if board[piece.ypos[i]][piece.xpos[i]]!=0:	# collision with other piece
+					return True
+		return False
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
@@ -211,21 +210,25 @@ class PlayerSpace(pygame.sprite.Sprite):
 		#update current piece only on own board
 		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
 			# curr_piece tick logic
+			self.curr_piece.tick()
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
+				self.curr_piece.untick()
 				for i in range(4):
 					x = self.curr_piece.xpos[i]
 					y = self.curr_piece.ypos[i]
 					s = self.curr_piece.shape
-					self.board.boardArray[y][x] = s
+					try:
+						self.board.boardArray[y][x] = s
+					except:
+						pass
 				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-				if self.collision(self.board.boardArray, self.curr_piece):
+				while self.collision(self.board.boardArray, self.curr_piece):
 					self.state = 1
 					self.board.boardArray[self.board.height-1][self.board.width-1] = 1
+					self.curr_piece.untick()
 				self.piece_landed = False
 			
-			else:	# move curr_piece down
-				self.curr_piece.tick()
 			self.color = (255,255,255)
 			self.image.fill(self.color)
 			self.rect = self.image.get_rect()
@@ -333,12 +336,17 @@ class CurrentPiece(pygame.sprite.Sprite):
 		self.createSquares()
 
 	def tick(self):
-		# no collisions = move down
 		for i in range(4):
 			self.ypos[i] -= 1
 		# update graphics
 		self.createSquares()
 
+	def untick(self):
+		for i in range(4):
+			self.ypos[i] += 1
+		# update graphics
+		self.createSquares()
+	
 	def createSquares(self):
 		self.images = []
 		self.rects = []
@@ -365,6 +373,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.centery = 73+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
+			if self.ypos[x]>19:	# end pieces
+				self.squareImage.fill((0,0,0))
 			self.images.append(self.squareImage)
 			self.squareRect = self.squareImage.get_rect()
 			self.squareRect.center = (self.centerx, self.centery)
@@ -395,7 +405,7 @@ class Explosion(pygame.sprite.Sprite):
 			self.image = pygame.transform.scale(self.image, (600, 600))
 			self.frame += 1
 		else:
-			self.image = pygame.image.load("explosion/empty.png")
+			self.image = pygame.image.load("empty.png")
 
 
 ## FIREWORKS##
@@ -416,7 +426,7 @@ class Fireworks(pygame.sprite.Sprite):
 			self.image = pygame.transform.scale(self.image, (600, 600))
 			self.frame += 1
 		else:
-			self.image = pygame.image.load("explosion/empty.png")
+			self.image = pygame.image.load("empty.png")
 
 
 ## SERVER CONNECTIONS ##
@@ -433,7 +443,10 @@ class ClientBoardConnection(Protocol):
 	def sendData(self):
 		array = [[self.gs.playerspace.board.boardArray[y][x] for x in range(self.gs.playerspace.board.width)] for y in range(self.gs.playerspace.board.height)]
 		for i in range(4):
-			array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+			try:
+				array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
+			except:
+				pass
 		array = pickle.dumps(array)	
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):

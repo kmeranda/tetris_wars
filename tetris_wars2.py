@@ -5,7 +5,7 @@ import sys
 import os
 import pygame
 from pygame.locals import *
-from random import choice
+from random import choice, randint
 
 #twisted imports
 from twisted.internet.protocol import ClientFactory
@@ -84,12 +84,18 @@ class GameSpace:
 		for i in range(0, len(self.playerspace.board.images)):
 			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
+		for i in range(0, len(self.playerspace.board.powerups)):
+			self.screen.blit(self.playerspace.board.powerups[i], self.playerspace.board.powerupRects[i])
 		for i in range(0, len(self.enemyspace.board.images)):
 			self.screen.blit(self.enemyspace.board.borders[i], self.enemyspace.board.borderRects[i])
 			self.screen.blit(self.enemyspace.board.images[i], self.enemyspace.board.rects[i])
+		for i in range(0, len(self.enemyspace.board.powerups)):
+			self.screen.blit(self.enemyspace.board.powerups[i], self.enemyspace.board.powerupRects[i])
 		for i in range(4):
 			self.screen.blit(self.playerspace.curr_piece.borders[i], self.playerspace.curr_piece.borderRects[i])
 			self.screen.blit(self.playerspace.curr_piece.images[i], self.playerspace.curr_piece.rects[i])
+		for i in range(0, len(self.playerspace.curr_piece.powerups)):
+			self.screen.blit(self.playerspace.curr_piece.powerups[i], self.playerspace.curr_piece.powerupRects[i])
 		#board captions/scores
 		self.screen.blit(self.playerBoardCaption, (70, 590))
 		self.screen.blit(self.opponentBoardCaption, (410, 590))
@@ -202,10 +208,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 				if board[piece.ypos[i]][piece.xpos[i]]!=0:	# collision with other piece
 					return True
 		return False
-		
+	
+	def powerup(self, num):	# powerup activated
+		pass
+
 	def tick(self):
 		self.board.createSquares() #visually interpret board
-		self.score += self.board.moveDown() # delete full rows in board and increase score
+		board_return = self.board.moveDown()
+		self.score += board_return[0] # delete full rows in board and increase score
+		self.powerup(board_return[1])
 		self.state = self.board.boardArray[self.board.height-1][self.board.width-1]
 		#update current piece only on own board
 		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
@@ -251,51 +262,70 @@ class Board(pygame.sprite.Sprite):
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 	def createSquares(self):
 		self.images = []
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 		for x in range(self.width):
 			for y in range(self.height):
 				#set square color depending on contents of array
-				if (self.boardArray[y][x] == 'O'): #yellow
+				if (self.boardArray[y][x] in ['O','o']): #yellow
 					self.squareColor = (255, 255, 0)
-				elif (self.boardArray[y][x] == 'I'): #teal
+				elif (self.boardArray[y][x] in ['I','i']): #teal
 					self.squareColor = (0, 255, 255)
-				elif (self.boardArray[y][x] == 'S'): #red
+				elif (self.boardArray[y][x] in ['S','s']): #red
 					self.squareColor = (255, 0, 0)
-				elif (self.boardArray[y][x] == 'Z'): #green
+				elif (self.boardArray[y][x] in ['Z','z']): #green
 					self.squareColor = (34, 139, 34)
-				elif (self.boardArray[y][x] == 'L'): #orange
+				elif (self.boardArray[y][x] in ['L','l']): #orange
 					self.squareColor = (255, 140, 0)
-				elif (self.boardArray[y][x] == 'J'): #blue
+				elif (self.boardArray[y][x] in ['J','j']): #blue
 					self.squareColor = (0, 0, 255)
-				elif (self.boardArray[y][x] == 'T'): #purple
+				elif (self.boardArray[y][x] in ['T','t']): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] not in [0,1]): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
 					self.centery = 73+(26*(self.height-(y+1)))
+					#colored square
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
 					self.squareRect = self.squareImage.get_rect()
 					self.squareRect.center = (self.centerx, self.centery)
 					self.rects.append(self.squareRect)
+					#border
 					self.border = pygame.Surface((26,26))
 					self.border.fill((0,0,0))
 					self.borders.append(self.border)
 					self.borderRect = self.border.get_rect()
 					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
+					#powerup
+					if self.boardArray[y][x].lower() == self.boardArray[y][x]: #lowercase -- powerup	
+						self.powerupImage = pygame.image.load("star.png")
+						self.powerupImage = pygame.transform.scale(self.powerupImage, (20, 20)) #scale image larger
+						self.powerups.append(self.powerupImage)
+						self.powerupRect = self.powerupImage.get_rect()
+						self.powerupRect.center = (self.centerx, self.centery)
+						self.powerupRects.append(self.powerupRect)
+
 	def moveDown(self):
 		updateScore = 0
+		powerups = 0
 		for y in range(self.height):	# iterate through rows in board
 			if not 0 in self.boardArray[y]:	# check for no empty space in row
+				for x in self.boardArray[y]:
+					if self.boardArray[y][x].islower(): # is a powerup
+						powerups += 1
 				del self.boardArray[y]	# delete full row
 				self.boardArray.append([0 for x in range(self.width)]) # add empty row to top
 				updateScore += 1
-		return updateScore
+		return [updateScore, powerups]
 
 
 ## CURRENT PIECE ##
@@ -303,31 +333,35 @@ class CurrentPiece(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
 		shapes = ['O', 'I', 'S', 'Z', 'L', 'J', 'T']
 		self.shape = choice(shapes)	# randomly choose shape for piece
+		if randint(1,20) == 1:	# if powerup, shape encoding is lowercase
+			self.shape = self.shape.lower()
 		self.xpos = [0,0,0,0]
 		self.ypos = [0,0,0,0]
 		self.images = []
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
-		if self.shape=='O':
+		self.powerups = []
+		self.powerupRects = []
+		if self.shape in ['O','o']:
 			self.xpos = [4,5,4,5]
 			self.ypos = [19,19,18,18]
-		elif self.shape=='I':
+		elif self.shape in ['I','i']:
 			self.xpos = [4,4,4,4]
 			self.ypos = [19,18,17,16]
-		elif self.shape=='S':
+		elif self.shape in ['S','s']:
 			self.xpos = [3,4,4,5]
 			self.ypos = [18,18,19,19]
-		elif self.shape=='Z':
+		elif self.shape in ['Z','z']:
 			self.xpos = [3,4,4,5]
 			self.ypos = [19,19,18,18]
-		elif self.shape=='L':
+		elif self.shape in ['L','l']:
 			self.xpos = [4,4,4,5]
 			self.ypos = [19,18,17,17]
-		elif self.shape=='J':
+		elif self.shape in ['J','j']:
 			self.xpos = [5,5,5,4]
 			self.ypos = [19,18,17,17]
-		elif self.shape=='T':
+		elif self.shape in ['T','t']:
 			self.xpos = [3,4,5,4]
 			self.ypos = [19,19,19,18]
 		else:
@@ -352,25 +386,28 @@ class CurrentPiece(pygame.sprite.Sprite):
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 		for x in range(4):
+			# add default blank image
 			#set square color depending on contents of array
-			if (self.shape == 'O'): #yellow
+			if (self.shape in ['O','o']): #yellow
 				self.squareColor = (255, 255, 0)
-			elif (self.shape == 'I'): #teal
+			elif (self.shape in ['I','i']): #teal
 				self.squareColor = (0, 255, 255)
-			elif (self.shape == 'S'): #red
+			elif (self.shape in ['S','s']): #red
 				self.squareColor = (255, 0, 0)
-			elif (self.shape == 'Z'): #green
+			elif (self.shape in ['Z','z']): #green
 				self.squareColor = (34, 139, 34)
-			elif (self.shape == 'L'): #orange
+			elif (self.shape in ['L','l']): #orange
 				self.squareColor = (255, 140, 0)
-			elif (self.shape == 'J'): #blue
+			elif (self.shape in ['J','j']): #blue
 				self.squareColor = (0, 0, 255)
-			elif (self.shape == 'T'): #purple
+			elif (self.shape in ['T','t']): #purple
 				self.squareColor = (160, 32, 240)
-
 			self.centerx = 23+(26*self.xpos[x])
 			self.centery = 73+(26*(20-(self.ypos[x]+1)))
+			#colored square
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			if self.ypos[x]>19:	# end pieces
@@ -379,12 +416,21 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.squareRect = self.squareImage.get_rect()
 			self.squareRect.center = (self.centerx, self.centery)
 			self.rects.append(self.squareRect)
+			#border
 			self.border = pygame.Surface((26,26))
 			self.border.fill((0,0,0))
 			self.borders.append(self.border)
 			self.borderRect = self.border.get_rect()
 			self.borderRect.center = (self.centerx, self.centery)
 			self.borderRects.append(self.borderRect)
+			#powerup
+			if self.shape.lower() == self.shape: #lowercase -- powerup	
+				self.powerupImage = pygame.image.load("star.png")
+				self.powerupImage = pygame.transform.scale(self.powerupImage, (20, 20)) #scale image larger
+				self.powerups.append(self.powerupImage)
+				self.powerupRect = self.powerupImage.get_rect()
+				self.powerupRect.center = (self.centerx, self.centery)
+				self.powerupRects.append(self.powerupRect)
 	
 
 ## EXPLOSION ##

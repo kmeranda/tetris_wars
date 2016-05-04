@@ -84,12 +84,18 @@ class GameSpace:
 		for i in range(0, len(self.playerspace.board.images)):
 			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
+		for i in range(0, len(self.playerspace.board.powerups)):
+			self.screen.blit(self.playerspace.board.powerups[i], self.playerspace.board.powerupRects[i])
 		for i in range(0, len(self.enemyspace.board.images)):
 			self.screen.blit(self.enemyspace.board.borders[i], self.enemyspace.board.borderRects[i])
 			self.screen.blit(self.enemyspace.board.images[i], self.enemyspace.board.rects[i])
+		for i in range(0, len(self.enemyspace.board.powerups)):
+			self.screen.blit(self.enemyspace.board.powerups[i], self.enemyspace.board.powerupRects[i])
 		for i in range(4):
 			self.screen.blit(self.playerspace.curr_piece.borders[i], self.playerspace.curr_piece.borderRects[i])
 			self.screen.blit(self.playerspace.curr_piece.images[i], self.playerspace.curr_piece.rects[i])
+		for i in range(0, len(self.playerspace.curr_piece.powerups)):
+			self.screen.blit(self.playerspace.curr_piece.powerups[i], self.playerspace.curr_piece.powerupRects[i])
 		#board captions/scores
 		self.screen.blit(self.playerBoardCaption, (70, 590))
 		self.screen.blit(self.opponentBoardCaption, (410, 590))
@@ -256,43 +262,58 @@ class Board(pygame.sprite.Sprite):
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 	def createSquares(self):
 		self.images = []
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 		for x in range(self.width):
 			for y in range(self.height):
 				#set square color depending on contents of array
-				if (self.boardArray[y][x] == 'O'): #yellow
+				if (self.boardArray[y][x] in ['O','o']): #yellow
 					self.squareColor = (255, 255, 0)
-				elif (self.boardArray[y][x] == 'I'): #teal
+				elif (self.boardArray[y][x] in ['I','i']): #teal
 					self.squareColor = (0, 255, 255)
-				elif (self.boardArray[y][x] == 'S'): #red
+				elif (self.boardArray[y][x] in ['S','s']): #red
 					self.squareColor = (255, 0, 0)
-				elif (self.boardArray[y][x] == 'Z'): #green
+				elif (self.boardArray[y][x] in ['Z','z']): #green
 					self.squareColor = (34, 139, 34)
-				elif (self.boardArray[y][x] == 'L'): #orange
+				elif (self.boardArray[y][x] in ['L','l']): #orange
 					self.squareColor = (255, 140, 0)
-				elif (self.boardArray[y][x] == 'J'): #blue
+				elif (self.boardArray[y][x] in ['J','j']): #blue
 					self.squareColor = (0, 0, 255)
-				elif (self.boardArray[y][x] == 'T'): #purple
+				elif (self.boardArray[y][x] in ['T','t']): #purple
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] not in [0,1]): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
 					self.centery = 73+(26*(self.height-(y+1)))
+					#colored square
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
 					self.squareRect = self.squareImage.get_rect()
 					self.squareRect.center = (self.centerx, self.centery)
 					self.rects.append(self.squareRect)
+					#border
 					self.border = pygame.Surface((26,26))
 					self.border.fill((0,0,0))
 					self.borders.append(self.border)
 					self.borderRect = self.border.get_rect()
 					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
+					#powerup
+					if self.boardArray[y][x].lower() == self.boardArray[y][x]: #lowercase -- powerup	
+						self.powerupImage = pygame.image.load("star.png")
+						self.powerupImage = pygame.transform.scale(self.powerupImage, (20, 20)) #scale image larger
+						self.powerups.append(self.powerupImage)
+						self.powerupRect = self.powerupImage.get_rect()
+						self.powerupRect.center = (self.centerx, self.centery)
+						self.powerupRects.append(self.powerupRect)
+
 	def moveDown(self):
 		updateScore = 0
 		powerups = 0
@@ -312,7 +333,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
 		shapes = ['O', 'I', 'S', 'Z', 'L', 'J', 'T']
 		self.shape = choice(shapes)	# randomly choose shape for piece
-		if randint(1,20) == 1:	# if powerup, shape encoding is lowercase
+		if randint(1,5) == 3:	# if powerup, shape encoding is lowercase
 			self.shape = self.shape.lower()
 		self.xpos = [0,0,0,0]
 		self.ypos = [0,0,0,0]
@@ -320,6 +341,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 		if self.shape in ['O','o']:
 			self.xpos = [4,5,4,5]
 			self.ypos = [19,19,18,18]
@@ -363,6 +386,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 		self.rects = []
 		self.borders = []
 		self.borderRects = []
+		self.powerups = []
+		self.powerupRects = []
 		for x in range(4):
 			# add default blank image
 			#set square color depending on contents of array
@@ -380,11 +405,9 @@ class CurrentPiece(pygame.sprite.Sprite):
 				self.squareColor = (0, 0, 255)
 			elif (self.shape in ['T','t']): #purple
 				self.squareColor = (160, 32, 240)
-			if (self.shape not in [0,1] and self.shape.lower()==self.shape):
-				# change image to star
-				pass
 			self.centerx = 23+(26*self.xpos[x])
 			self.centery = 73+(26*(20-(self.ypos[x]+1)))
+			#colored square
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			if self.ypos[x]>19:	# end pieces
@@ -393,12 +416,21 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.squareRect = self.squareImage.get_rect()
 			self.squareRect.center = (self.centerx, self.centery)
 			self.rects.append(self.squareRect)
+			#border
 			self.border = pygame.Surface((26,26))
 			self.border.fill((0,0,0))
 			self.borders.append(self.border)
 			self.borderRect = self.border.get_rect()
 			self.borderRect.center = (self.centerx, self.centery)
 			self.borderRects.append(self.borderRect)
+			#powerup
+			if self.shape.lower() == self.shape: #lowercase -- powerup	
+				self.powerupImage = pygame.image.load("star.png")
+				self.powerupImage = pygame.transform.scale(self.powerupImage, (20, 20)) #scale image larger
+				self.powerups.append(self.powerupImage)
+				self.powerupRect = self.powerupImage.get_rect()
+				self.powerupRect.center = (self.centerx, self.centery)
+				self.powerupRects.append(self.powerupRect)
 	
 
 ## EXPLOSION ##
