@@ -20,7 +20,8 @@ import cPickle as pickle
 
 #twisted port/host variables
 HOST = 'student02.cse.nd.edu'
-PLAYER_PORT = 40012
+BOARD_PORT = 40011
+SCORE_PORT = 40211
 
 
 
@@ -29,7 +30,7 @@ class GameSpace:
 	def __init__(self):
 		# 1. init game space
 		pygame.init()
-		self.size = self.width, self.height = (640, 580)
+		self.size = self.width, self.height = (640, 640)
 		self.screen = pygame.display.set_mode(self.size)
 		self.black = (0,0,0)
 
@@ -37,6 +38,13 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
+		self.titlefont = pygame.font.SysFont("monospace", 50)
+		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
+		self.playerFont = pygame.font.SysFont("monospace", 30)
+		self.playerHeader = self.playerFont.render("Player 1", 1, (255,255,255))
+		self.playerBoardCaption = self.playerFont.render("Player's Board", 1, (255,255,255))
+		self.opponentBoardCaption = self.playerFont.render("Opponent's Board", 1, (255,255,255))
+		self.scoreCaption = self.playerFont.render("Score: ", 1, (255,255,255))
 
 	# 3. start game loop
 	def game_loop_iterate(self):
@@ -61,8 +69,13 @@ class GameSpace:
 		self.enemyspace.tick()
 		# 7. screen/display updating
 		self.screen.fill(self.black)
+		#titles
+		self.screen.blit(self.title, (225, 3))
+		self.screen.blit(self.playerHeader, (280, 40))
+		#board backgrounds
 		self.screen.blit(self.playerspace.image, self.playerspace.rect)
 		self.screen.blit(self.enemyspace.image, self.enemyspace.rect)
+		#contents of boards
 		for i in range(0, len(self.playerspace.board.images)):
 			self.screen.blit(self.playerspace.board.borders[i], self.playerspace.board.borderRects[i])
 			self.screen.blit(self.playerspace.board.images[i], self.playerspace.board.rects[i])
@@ -72,6 +85,15 @@ class GameSpace:
 		for i in range(4):
 			self.screen.blit(self.playerspace.curr_piece.borders[i], self.playerspace.curr_piece.borderRects[i])
 			self.screen.blit(self.playerspace.curr_piece.images[i], self.playerspace.curr_piece.rects[i])
+		#board captions/scores
+		self.screen.blit(self.playerBoardCaption, (70, 590))
+		self.screen.blit(self.opponentBoardCaption, (410, 590))
+		self.screen.blit(self.scoreCaption, (70, 610))
+		self.screen.blit(self.scoreCaption, (410, 610))
+		self.myScore = self.playerFont.render(str(self.playerspace.score), 1, (255,255,255))
+		self.screen.blit(self.myScore, (140, 610))
+		self.oppScore = self.playerFont.render(str(self.enemyspace.score), 1, (255,255,255))
+		self.screen.blit(self.oppScore, (480, 610))
 		pygame.display.flip()
 
 
@@ -93,6 +115,8 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
+		self.score = 0
+		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds
 		for i in range(4):
@@ -146,7 +170,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		
 	def tick(self):
 		self.board.createSquares() #visually interpret board
-		self.board.moveDown() # delete full rows in board
+		self.score += self.board.moveDown() # delete full rows in board and increase score
 		#update current piece only on own board
 		if self.num == 1:
 			# curr_piece tick logic
@@ -208,7 +232,7 @@ class Board(pygame.sprite.Sprite):
 					self.squareColor = (160, 32, 240)
 				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
-					self.centery = 43+(26*(self.height-(y+1)))
+					self.centery = 73+(26*(self.height-(y+1)))
 					self.squareImage = pygame.Surface((24,24))
 					self.squareImage.fill(self.squareColor)
 					self.images.append(self.squareImage)
@@ -222,10 +246,14 @@ class Board(pygame.sprite.Sprite):
 					self.borderRect.center = (self.centerx, self.centery)
 					self.borderRects.append(self.borderRect)
 	def moveDown(self):
+		updateScore = 0
 		for y in range(self.height):	# iterate through rows in board
 			if not 0 in self.boardArray[y]:	# check for no empty space in row
 				del self.boardArray[y]	# delete full row
 				self.boardArray.append([0 for x in range(self.width)]) # add empty row to top
+				updateScore += 1
+		return updateScore
+
 
 ## CURRENT PIECE ##
 class CurrentPiece(pygame.sprite.Sprite):
@@ -294,7 +322,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 				self.squareColor = (160, 32, 240)
 
 			self.centerx = 23+(26*self.xpos[x])
-			self.centery = 43+(26*(20-(self.ypos[x]+1)))
+			self.centery = 73+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
 			self.images.append(self.squareImage)
@@ -310,11 +338,11 @@ class CurrentPiece(pygame.sprite.Sprite):
 	
 
 ## SERVER CONNECTIONS ##
-class ClientConnection(Protocol):
+class ClientBoardConnection(Protocol):
 	def __init__(self, gs):
 		self.gs = gs
 	def connectionMade(self):
-		print "New connection made:", HOST, "port", PLAYER_PORT
+		print "New board connection made:", HOST, "port", BOARD_PORT
 		self.sendData()
 	def dataReceived(self, data): #receive other gamespace from server
 		#print "Received data"
@@ -325,22 +353,44 @@ class ClientConnection(Protocol):
 		for i in range(4):
 			array[self.gs.playerspace.curr_piece.ypos[i]][self.gs.playerspace.curr_piece.xpos[i]] = self.gs.playerspace.curr_piece.shape
 		array = pickle.dumps(array)	
-		#array = pickle.dumps(self.gs.playerspace.board.boardArray) #pickle array to stringa
 		self.transport.write(array) #send updated gamespace to server
 	def connectionLost(self, reason):
-		print "Lost connection with", HOST, "port", PLAYER_PORT
+		print "Lost board connection with", HOST, "port", BOARD_PORT
 
-class ClientConnFactory(ClientFactory):
+class ClientBoardConnFactory(ClientFactory):
 	def __init__(self, gs):
 		self.gs = gs
 	def buildProtocol(self,addr):
-		return ClientConnection(self.gs)
+		return ClientBoardConnection(self.gs)
 
+class ClientScoreConnection(Protocol):
+	def __init__(self, gs):
+		self.gs = gs
+	def connectionMade(self):
+		print "New score connection made:", HOST, "port", SCORE_PORT
+		self.sendData()
+	def dataReceived(self, data): #receive other gamespace from server
+		#print "Received data"
+		self.gs.enemyspace.score = pickle.loads(data)
+		#print self.gs.enemyspace.score
+		self.sendData()
+	def sendData(self):
+		score = pickle.dumps(self.gs.playerspace.score) #pickle score to string
+		self.transport.write(score) #send score to server
+	def connectionLost(self, reason):
+		print "Lost score connection with", HOST, "port", SCORE_PORT
+
+class ClientScoreConnFactory(ClientFactory):
+	def __init__(self, gs):
+		self.gs = gs
+	def buildProtocol(self,addr):
+		return ClientScoreConnection(self.gs)
 
 
 if __name__ == '__main__':
 	gs = GameSpace()
 	lc = LoopingCall(gs.game_loop_iterate)	
 	lc.start(1/60)
-	reactor.connectTCP(HOST, PLAYER_PORT, ClientConnFactory(gs))
+	reactor.connectTCP(HOST, BOARD_PORT, ClientBoardConnFactory(gs))
+	reactor.connectTCP(HOST, SCORE_PORT, ClientScoreConnFactory(gs))
 	reactor.run()
