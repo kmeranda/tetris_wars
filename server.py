@@ -1,5 +1,11 @@
-# tetris_wars
-# server
+# Kim Forbes and Kelsey Meranda
+# CSE 30332
+# PyGame + Twisted Final Project
+# 4 May 2016
+
+
+## Tetris Wars #
+###  SERVER  ###
 
 
 import os

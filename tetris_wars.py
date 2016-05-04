@@ -1,3 +1,9 @@
+# Kim Forbes & Kelsey Meranda
+# CSE 30332
+# PyGame + Twisted Final Project
+# 4 May 2016
+
+## Tetris Wars # 
 ### PLAYER 1 ###
 
 #pygame imports
@@ -153,7 +159,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
-		self.curr_piece = CurrentPiece(self)
+		self.curr_piece = CurrentPiece(self) #falling piece
 		self.score = 0
 		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
@@ -330,7 +336,7 @@ class Board(pygame.sprite.Sprite):
 						self.powerupRect.center = (self.centerx, self.centery)
 						self.powerupRects.append(self.powerupRect)
 
-	def moveDown(self):
+	def moveDown(self): #clear full rows on board
 		updateScore = 0
 		powerups = 0
 		for y in range(self.height):	# iterate through rows in board
@@ -534,7 +540,6 @@ class ClientScoreConnection(Protocol):
 	def dataReceived(self, data): #receive other gamespace from server
 		#print "Received data"
 		self.gs.enemyspace.score = pickle.loads(data)
-		#print self.gs.enemyspace.score
 		self.sendData()
 	def sendData(self):
 		score = pickle.dumps(self.gs.playerspace.score) #pickle score to string
