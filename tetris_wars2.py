@@ -214,6 +214,15 @@ class PlayerSpace(pygame.sprite.Sprite):
 	def activate_powerup(self, num):	# powerup activated
 		if num > 0:
 			print 'deleted row with', num, 'powerup(s)'
+		for i in range(0, num):
+			powerupval = randint(0,4)
+			if powerupval == 0: #multiply score by 2
+				self.score *= 2
+			else: #delete 1-4 rows
+				for j in range(1, powerupval):
+					del self.board.boardArray[0] # delete full row
+					self.board.boardArray.append([0 for x in range(self.board.width)]) # add empty row to top
+					self.score += 1
 
 	def tick(self):
 		self.board.createSquares() #visually interpret board
@@ -338,7 +347,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
 		shapes = ['O', 'I', 'S', 'Z', 'L', 'J', 'T']
 		self.shape = choice(shapes)	# randomly choose shape for piece
-		self.powerup =  randint(0,3)	# 0-3 indicate a power up on one of the spots, else is no powerup on the piece
+		self.powerup =  randint(0,20)	# 0-3 indicate a power up on one of the spots, else is no powerup on the piece
 		self.xpos = [0,0,0,0]
 		self.ypos = [0,0,0,0]
 		self.images = []
