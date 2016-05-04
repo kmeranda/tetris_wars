@@ -5,7 +5,7 @@ import sys
 import os
 import pygame
 from pygame.locals import *
-from random import choice
+from random import choice, randint
 
 #twisted imports
 from twisted.internet.protocol import ClientFactory
