@@ -156,7 +156,10 @@ class PlayerSpace(pygame.sprite.Sprite):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
 			s = self.curr_piece.shape
-			self.board.boardArray[y][x] = s
+			try:
+				self.board.boardArray[y][x] = s
+			except:
+				pass
 		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
 		if self.collision(self.board.boardArray, self.curr_piece):
 			self.state = 1
@@ -185,8 +188,9 @@ class PlayerSpace(pygame.sprite.Sprite):
 				return True
 			if piece.xpos[i]<0 or piece.xpos[i]>len(board[i])-1: # collision with sides
 				return True
-			if board[piece.ypos[i]][piece.xpos[i]]!=0:	# collision with other piece
-				return True
+			if piece.ypos[i]<len(board):	# only an issue for end game
+				if board[piece.ypos[i]][piece.xpos[i]]!=0:	# collision with other piece
+					return True
 		return False
 		
 	def tick(self):
@@ -204,7 +208,10 @@ class PlayerSpace(pygame.sprite.Sprite):
 					x = self.curr_piece.xpos[i]
 					y = self.curr_piece.ypos[i]
 					s = self.curr_piece.shape
-					self.board.boardArray[y][x] = s
+					try:
+						self.board.boardArray[y][x] = s
+					except:
+						pass
 				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
 				while self.collision(self.board.boardArray, self.curr_piece):
 					self.state = 1
@@ -356,6 +363,8 @@ class CurrentPiece(pygame.sprite.Sprite):
 			self.centery = 73+(26*(20-(self.ypos[x]+1)))
 			self.squareImage = pygame.Surface((24,24))
 			self.squareImage.fill(self.squareColor)
+			if self.ypos[x]>19:	# end pieces
+				self.squareImage.fill((0,0,0))
 			self.images.append(self.squareImage)
 			self.squareRect = self.squareImage.get_rect()
 			self.squareRect.center = (self.centerx, self.centery)
