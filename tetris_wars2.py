@@ -38,7 +38,6 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		#text objects
 		self.titlefont = pygame.font.SysFont("monospace", 50)
 		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
 		self.playerFont = pygame.font.SysFont("monospace", 30)
@@ -91,6 +90,10 @@ class GameSpace:
 		self.screen.blit(self.opponentBoardCaption, (410, 590))
 		self.screen.blit(self.scoreCaption, (70, 610))
 		self.screen.blit(self.scoreCaption, (410, 610))
+		self.myScore = self.playerFont.render(str(self.playerspace.score), 1, (255,255,255))
+		self.screen.blit(self.myScore, (140, 610))
+		self.oppScore = self.playerFont.render(str(self.enemyspace.score), 1, (255,255,255))
+		self.screen.blit(self.oppScore, (480, 610))
 		pygame.display.flip()
 
 
@@ -112,7 +115,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
-		self.score = 0
+		self.score = 100
 		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds

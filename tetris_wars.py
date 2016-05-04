@@ -90,6 +90,10 @@ class GameSpace:
 		self.screen.blit(self.opponentBoardCaption, (410, 590))
 		self.screen.blit(self.scoreCaption, (70, 610))
 		self.screen.blit(self.scoreCaption, (410, 610))
+		self.myScore = self.playerFont.render(str(self.playerspace.score), 1, (255,255,255))
+		self.screen.blit(self.myScore, (140, 610))
+		self.oppScore = self.playerFont.render(str(self.enemyspace.score), 1, (255,255,255))
+		self.screen.blit(self.oppScore, (480, 610))
 		pygame.display.flip()
 
 
