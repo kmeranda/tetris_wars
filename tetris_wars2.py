@@ -38,14 +38,16 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		self.titlefont = pygame.font.SysFont("monospace", 50)
-		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
+		self.titleFont = pygame.font.SysFont("monospace", 50)
+		self.title = self.titleFont.render("Tetris Wars", 1, (255,255,255))
 		self.playerFont = pygame.font.SysFont("monospace", 30)
 		self.playerHeader = self.playerFont.render("Player 2", 1, (255,255,255))
 		self.playerBoardCaption = self.playerFont.render("Player's Board", 1, (255,255,255))
 		self.opponentBoardCaption = self.playerFont.render("Opponent's Board", 1, (255,255,255))
 		self.scoreCaption = self.playerFont.render("Score: ", 1, (255,255,255))
-
+		self.winFont = pygame.font.SysFont("monospace", 50)
+		self.winFont.set_bold(True)
+		
 	# 3. start game loop
 	def game_loop_iterate(self):
 		# 4. clock tick regulation (framerate)
@@ -94,6 +96,27 @@ class GameSpace:
 		self.screen.blit(self.myScore, (140, 610))
 		self.oppScore = self.playerFont.render(str(self.enemyspace.score), 1, (255,255,255))
 		self.screen.blit(self.oppScore, (480, 610))
+		#gameover/winner displays
+		self.myStateText = ''
+		self.oppStateText = ''
+		self.winText = ''
+		if self.playerspace.state == 1: #your game is over
+			self.myStateText = 'GAME OVER'
+		if self.enemyspace.state == 1: #opponent's game is over
+			self.oppStateText = 'GAME OVER'
+		if (self.playerspace.state + self.enemyspace.state) == 2: #if both games are over, determine winner
+			if self.playerspace.score > self.enemyspace.score: #you have higher score
+				self.winText = 'YOU WIN!!'
+			elif self.enemyspace.score > self.playerspace.score: #opp has higher score
+				self.winText = 'YOU LOSE.'
+			else: #draw
+				self.winText = "IT'S A TIE."
+		self.myState = self.playerFont.render(self.myStateText, 1, (178,34,34))
+		self.screen.blit(self.myState, (70, 320))
+		self.oppState = self.playerFont.render(self.oppStateText, 1, (178,34,34))
+		self.screen.blit(self.oppState, (450, 320))
+		self.win = self.winFont.render(self.winText, 1, (178,34,34))
+		self.screen.blit(self.win, (225, 320))
 		pygame.display.flip()
 
 
@@ -115,7 +138,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.rect.center = (self.xpos, self.ypos)
 		self.board = Board(self.num, self) #initialize board
 		self.curr_piece = CurrentPiece(self)
-		self.score = 100
+		self.score = 0
 		self.state = 0 #playing=0, gameover=1
 	def move(self, dir):
 		edge = False	# check so that you don't go out of bounds

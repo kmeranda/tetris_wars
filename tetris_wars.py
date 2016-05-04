@@ -38,14 +38,16 @@ class GameSpace:
 		self.clock = pygame.time.Clock()
 		self.playerspace = PlayerSpace(1, self)
 		self.enemyspace = PlayerSpace(2, self)
-		self.titlefont = pygame.font.SysFont("monospace", 50)
-		self.title = self.titlefont.render("Tetris Wars", 1, (255,255,255))
+		self.titleFont = pygame.font.SysFont("monospace", 50)
+		self.title = self.titleFont.render("Tetris Wars", 1, (255,255,255))
 		self.playerFont = pygame.font.SysFont("monospace", 30)
 		self.playerHeader = self.playerFont.render("Player 1", 1, (255,255,255))
 		self.playerBoardCaption = self.playerFont.render("Player's Board", 1, (255,255,255))
 		self.opponentBoardCaption = self.playerFont.render("Opponent's Board", 1, (255,255,255))
 		self.scoreCaption = self.playerFont.render("Score: ", 1, (255,255,255))
-
+		self.winFont = pygame.font.SysFont("monospace", 50)
+		self.winFont.set_bold(True)
+		
 	# 3. start game loop
 	def game_loop_iterate(self):
 		# 4. clock tick regulation (framerate)
@@ -94,6 +96,27 @@ class GameSpace:
 		self.screen.blit(self.myScore, (140, 610))
 		self.oppScore = self.playerFont.render(str(self.enemyspace.score), 1, (255,255,255))
 		self.screen.blit(self.oppScore, (480, 610))
+		#gameover/winner displays
+		self.myStateText = ''
+		self.oppStateText = ''
+		self.winText = ''
+		if self.playerspace.state == 1: #your game is over
+			self.myStateText = 'GAME OVER'
+		if self.enemyspace.state == 1: #opponent's game is over
+			self.oppStateText = 'GAME OVER'
+		if (self.playerspace.state + self.enemyspace.state) == 2: #if both games are over, determine winner
+			if self.playerspace.score > self.enemyspace.score: #you have higher score
+				self.winText = 'YOU WIN!!'
+			elif self.enemyspace.score > self.playerspace.score: #opp has higher score
+				self.winText = 'YOU LOSE.'
+			else: #draw
+				self.winText = "IT'S A TIE."
+		self.myState = self.playerFont.render(self.myStateText, 1, (178,34,34))
+		self.screen.blit(self.myState, (70, 320))
+		self.oppState = self.playerFont.render(self.oppStateText, 1, (178,34,34))
+		self.screen.blit(self.oppState, (450, 320))
+		self.win = self.winFont.render(self.winText, 1, (178,34,34))
+		self.screen.blit(self.win, (225, 320))
 		pygame.display.flip()
 
 
@@ -139,9 +162,6 @@ class PlayerSpace(pygame.sprite.Sprite):
 			s = self.curr_piece.shape
 			self.board.boardArray[y][x] = s
 		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-		if self.collision(self.board.boardArray, self.curr_piece):
-			self.state = 1
-			self.board.boardArray[self.board.height-1][self.board.width-1] = 1
 		self.piece_landed = False
 		
 	
@@ -175,7 +195,7 @@ class PlayerSpace(pygame.sprite.Sprite):
 		self.board.createSquares() #visually interpret board
 		self.score += self.board.moveDown() # delete full rows in board and increase score
 		#update current piece only on own board
-		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
+		if self.num == 1:
 			# curr_piece tick logic
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
@@ -185,9 +205,6 @@ class PlayerSpace(pygame.sprite.Sprite):
 					s = self.curr_piece.shape
 					self.board.boardArray[y][x] = s
 				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-				if self.collision(self.board.boardArray, self.curr_piece):
-					self.state = 1
-					self.board.boardArray[self.board.height-1][self.board.width-1] = 1
 				self.piece_landed = False
 			
 			else:	# move curr_piece down
@@ -236,7 +253,7 @@ class Board(pygame.sprite.Sprite):
 					self.squareColor = (0, 0, 255)
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
-				if (self.boardArray[y][x] not in [0,1]): #create square, rect, and border for all filled coordinates
+				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
 					self.centery = 73+(26*(self.height-(y+1)))
 					self.squareImage = pygame.Surface((24,24))

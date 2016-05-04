@@ -14,20 +14,24 @@ from twisted.internet.defer import DeferredQueue
 #init port number
 PLAYER1_BOARDPORT = 40012
 PLAYER2_BOARDPORT = 40112
+PLAYER1_SCOREPORT = 40212
+PLAYER2_SCOREPORT = 40312
 
 
 #init queues
 P1_BOARDQUEUE = DeferredQueue()
 P2_BOARDQUEUE = DeferredQueue()
+P1_SCOREQUEUE = DeferredQueue()
+P2_SCOREQUEUE = DeferredQueue()
 
 
 ## player 1 ##
-class Player1Connection(LineReceiver): #connects server
+class P1BoardConnection(LineReceiver): #connects server
 	def __init__(self, addr):
 		self.addr = addr
 	def connectionMade(self):
-		print "Connection received from Player 1:", self.addr
-		reactor.listenTCP(PLAYER2_BOARDPORT, Player2ConnFactory())
+		print "Board connection received from Player 1:", self.addr
+		reactor.listenTCP(PLAYER2_BOARDPORT, P2BoardConnFactory())
 	def dataReceived(self, data):
 		#print "Received Data:", data -- prints too much garbage
 		P2_BOARDQUEUE.put(data)
@@ -35,20 +39,37 @@ class Player1Connection(LineReceiver): #connects server
 	def sendData(self, data): #send data to player 1
 		self.transport.write(data)
 	def connectionLost(self, reason):
-		print "Connection lost from Player 1:", self.addr
+		print "Board connection lost from Player 1:", self.addr
 
-
-class Player1ConnFactory(Factory):
+class P1BoardConnFactory(Factory):
 	def buildProtocol(self, addr): #create server
-		return Player1Connection(addr)
+		return P1BoardConnection(addr)
 
-
-## player 2 ##		
-class Player2Connection(LineReceiver):
+class P1ScoreConnection(LineReceiver): #connects server
 	def __init__(self, addr):
 		self.addr = addr
 	def connectionMade(self):
-		print "Connection received from Player 2:", self.addr
+		print "Score connection received from Player 1:", self.addr
+		reactor.listenTCP(PLAYER2_SCOREPORT, P2ScoreConnFactory())
+	def dataReceived(self, data):
+		#print "Received Data:", data
+		P2_SCOREQUEUE.put(data)
+		P1_SCOREQUEUE.get().addCallback(self.sendData)
+	def sendData(self, data): #send data to player 1
+		self.transport.write(data)
+	def connectionLost(self, reason):
+		print "Score connection lost from Player 1:", self.addr
+
+class P1ScoreConnFactory(Factory):
+	def buildProtocol(self, addr): #create server
+		return P1ScoreConnection(addr)
+
+## player 2 ##		
+class P2BoardConnection(LineReceiver):
+	def __init__(self, addr):
+		self.addr = addr
+	def connectionMade(self):
+		print "Board connection received from Player 2:", self.addr
 	def dataReceived(self, data):
 		#print "Received Data", data -- prints too much garbage
 		P1_BOARDQUEUE.put(data)
@@ -56,13 +77,31 @@ class Player2Connection(LineReceiver):
 	def sendData(self, data): #send data to player 2
 		self.transport.write(data)
 	def connectionLost(self, reason):
-		print "Connection lost from Player 2:", self.addr
+		print "Board connection lost from Player 2:", self.addr
 
-
-class Player2ConnFactory(Factory):
+class P2BoardConnFactory(Factory):
 	def buildProtocol(self, addr): 
-		return Player2Connection(addr)
+		return P2BoardConnection(addr)
+
+class P2ScoreConnection(LineReceiver):
+	def __init__(self, addr):
+		self.addr = addr
+	def connectionMade(self):
+		print "Score connection received from Player 2:", self.addr
+	def dataReceived(self, data):
+		#print "Received Data", data
+		P1_SCOREQUEUE.put(data)
+		P2_SCOREQUEUE.get().addCallback(self.sendData)
+	def sendData(self, data): #send data to player 2
+		self.transport.write(data)
+	def connectionLost(self, reason):
+		print "Score connection lost from Player 2:", self.addr
+
+class P2ScoreConnFactory(Factory):
+	def buildProtocol(self, addr): 
+		return P2ScoreConnection(addr)
 
 
-reactor.listenTCP(PLAYER1_BOARDPORT, Player1ConnFactory())
+reactor.listenTCP(PLAYER1_BOARDPORT, P1BoardConnFactory())
+reactor.listenTCP(PLAYER1_SCOREPORT, P1ScoreConnFactory())
 reactor.run() #starts event loop
