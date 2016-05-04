@@ -162,6 +162,9 @@ class PlayerSpace(pygame.sprite.Sprite):
 			s = self.curr_piece.shape
 			self.board.boardArray[y][x] = s
 		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+		if self.collision(self.board.boardArray, self.curr_piece):
+			self.state = 1
+			self.board.boardArray[self.board.height-1][self.board.width-1] = 1
 		self.piece_landed = False
 		
 	
@@ -194,8 +197,9 @@ class PlayerSpace(pygame.sprite.Sprite):
 	def tick(self):
 		self.board.createSquares() #visually interpret board
 		self.score += self.board.moveDown() # delete full rows in board and increase score
+		self.state = self.board.boardArray[self.board.height-1][self.board.width-1]
 		#update current piece only on own board
-		if self.num == 1:
+		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
 			# curr_piece tick logic
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
@@ -205,6 +209,9 @@ class PlayerSpace(pygame.sprite.Sprite):
 					s = self.curr_piece.shape
 					self.board.boardArray[y][x] = s
 				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
+				if self.collision(self.board.boardArray, self.curr_piece):
+					self.state = 1
+					self.board.boardArray[self.board.height-1][self.board.width-1] = 1
 				self.piece_landed = False
 			
 			else:	# move curr_piece down
@@ -253,7 +260,7 @@ class Board(pygame.sprite.Sprite):
 					self.squareColor = (0, 0, 255)
 				elif (self.boardArray[y][x] == 'T'): #purple
 					self.squareColor = (160, 32, 240)
-				if (self.boardArray[y][x] != 0): #create square, rect, and border for all filled coordinates
+				if (self.boardArray[y][x] not in [0,1]): #create square, rect, and border for all filled coordinates
 					self.centerx = self.start_xCoord+13+(26*x)
 					self.centery = 73+(26*(self.height-(y+1)))
 					self.squareImage = pygame.Surface((24,24))
