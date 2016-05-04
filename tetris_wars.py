@@ -164,33 +164,34 @@ class PlayerSpace(pygame.sprite.Sprite):
 				self.curr_piece.xpos[i] -= dir
 
 	def place(self):
-		# curr_piece tick logic looped until it hits the bottom
+		# curr_piece tick logic looped until piece hits the bottom
 		while not self.collision(self.board.boardArray, self.curr_piece):
 			self.curr_piece.tick()
-		self.curr_piece.untick()
+		self.curr_piece.untick() # back up one tick to legal position
+		# add piece to board array
 		for i in range(4):
 			x = self.curr_piece.xpos[i]
 			y = self.curr_piece.ypos[i]
 			s = self.curr_piece.shape
 			if self.curr_piece.powerup == i:
 				s = s.lower()
-			try:
+			try:	# in case piece is above board, don't place in board
 				self.board.boardArray[y][x] = s
 			except:
 				pass
 		self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-		if self.collision(self.board.boardArray, self.curr_piece):
-			self.state = 1
-			self.board.boardArray[self.board.height-1][self.board.width-1] = 1
-			self.curr_piece.untick()
+		while self.collision(self.board.boardArray, self.curr_piece):	# if new piece immediately collides, then you lose
+			self.state = 1	# game over state
+			self.board.boardArray[self.board.height-1][self.board.width-1] = 1 	# corner of board array encoded to signal opponent of game over state
+			self.curr_piece.untick()	# back up above the last piece
 	
 	def rotate(self):
 		if self.curr_piece.shape != 'O':	# cannot rotate square
 			x_arr = [self.curr_piece.xpos[i] for i in range(4)]
 			y_arr = [self.curr_piece.ypos[i] for i in range(4)]
-			x = x_arr[2]	# rotate about 3rd square
+			x = x_arr[2]	# rotate about 3rd square of tetromino
 			y = y_arr[2]
-			# get distances from 
+			# get distances from center of rotation
 			x_dist = [(x_arr[i]-x) for i in range(4)]
 			y_dist = [(y_arr[i]-y) for i in range(4)]
 			self.curr_piece.xpos = [(x-y_dist[i]) for i in range(4)]
@@ -200,7 +201,6 @@ class PlayerSpace(pygame.sprite.Sprite):
 				self.curr_piece.ypos = y_arr
 
 	def collision(self, board, piece):
-		num = 0
 		for i in range(4):
 			if piece.ypos[i]<0:	# collision with bottom
 				return True
@@ -212,8 +212,6 @@ class PlayerSpace(pygame.sprite.Sprite):
 		return False
 	
 	def activate_powerup(self, num):	# powerup activated
-		if num > 0:
-			print 'deleted row with', num, 'powerup(s)'
 		for i in range(0, num):
 			powerupval = randint(0,4)
 			if powerupval == 0: #multiply score by 2
@@ -225,18 +223,22 @@ class PlayerSpace(pygame.sprite.Sprite):
 					self.score += 1
 
 	def tick(self):
+		## board tick logic ##
 		self.board.createSquares() #visually interpret board
 		board_return = self.board.moveDown()
 		self.score += board_return[0] # delete full rows in board and increase score
 		self.activate_powerup(board_return[1])
 		self.state = self.board.boardArray[self.board.height-1][self.board.width-1]
+
+		## curr_piece tick logic ##
 		#update current piece only on own board
 		if self.num == 1 and self.state != 1:	# piece logic only on player and only when not lost
-			# curr_piece tick logic
 			self.curr_piece.tick()
 			self.piece_landed = self.collision(self.board.boardArray, self.curr_piece)
 			if self.piece_landed:	# add curr_piece to boardArray
+				# back up one tick to legal position
 				self.curr_piece.untick()
+				# add piece to board
 				for i in range(4):
 					x = self.curr_piece.xpos[i]
 					y = self.curr_piece.ypos[i]
@@ -248,9 +250,9 @@ class PlayerSpace(pygame.sprite.Sprite):
 					except:
 						pass
 				self.curr_piece = CurrentPiece(self)	# re-init curr_piece
-				while self.collision(self.board.boardArray, self.curr_piece):
+				while self.collision(self.board.boardArray, self.curr_piece):	# if immediate collision with new piece then game over
 					self.state = 1
-					self.board.boardArray[self.board.height-1][self.board.width-1] = 1
+					self.board.boardArray[self.board.height-1][self.board.width-1] = 1	# encode game state in corner cell of board for data transfer
 					self.curr_piece.untick()
 				self.piece_landed = False
 			
@@ -267,9 +269,9 @@ class Board(pygame.sprite.Sprite):
 		self.gs = gs
 		self.width = 10
 		self.height = 20
-		if (player_num == 1):
+		if (player_num == 1):	# current player
 			self.start_xCoord = 10
-		elif (player_num == 2):
+		elif (player_num == 2):	# enemy player
 			self.start_xCoord = 370
 		self.boardArray = [[0 for x in range(self.width)] for y in range(self.height)]
 		self.images = []
@@ -356,6 +358,7 @@ class CurrentPiece(pygame.sprite.Sprite):
 		self.borderRects = []
 		self.powerups = []
 		self.powerupRects = []
+		# position of initial pieces
 		if self.shape in ['O','o']:
 			self.xpos = [4,5,4,5]
 			self.ypos = [19,19,18,18]
@@ -470,7 +473,7 @@ class Explosion(pygame.sprite.Sprite):
 			self.image = pygame.image.load("empty.png")
 
 
-## FIREWORKS##
+## FIREWORKS ##
 class Fireworks(pygame.sprite.Sprite):
 	def __init__(self, gs=None):
 		pygame.sprite.Sprite.__init__(self)
